@@ -96,7 +96,7 @@ const CategoryMenu = ({ initialActive = 1, activeCategory, onSelect }: CategoryM
           categories.map((category, idx) => {
             const isSelected = activeCategory === category.name
             const isHovered = hoverIndex === idx
-            const isActive = isSelected || (!activeCategory && idx === initialActive)
+            const isActive = isSelected || (!activeCategory && initialActive >= 0 && idx === initialActive)
 
             return (
               <li key={category.id}>

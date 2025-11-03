@@ -157,16 +157,14 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
               )}
             </div>
 
-            {/* Brand */}
-            <div className="mb-4">
-              <span className="text-sm text-gray-600">Brand: </span>
-              <span className="text-sm font-medium text-gray-900">Ecobazar</span>
-            </div>
+            {/* Brand removed per requirement */}
 
-            {/* Description */}
-            <p className="text-gray-600 text-sm mb-6 leading-relaxed">
-              {product.description || 'Sản phẩm tươi ngon, chất lượng cao được tuyển chọn kỹ càng từ các nhà cung cấp uy tín. Đảm bảo an toàn thực phẩm và giàu dinh dưỡng cho sức khỏe gia đình bạn.'}
-            </p>
+            {/* Description (only show when available) */}
+            {product.description && (
+              <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+                {product.description}
+              </p>
+            )}
 
             {/* Quantity and Add to Cart */}
             <div className="flex items-center gap-4 mb-6">
@@ -208,15 +206,11 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
               </button>
             </div>
 
-            {/* Product Meta */}
+            {/* Product Meta (Tag removed) */}
             <div className="space-y-2 text-sm">
               <div>
                 <span className="text-gray-600">Danh mục: </span>
                 <span className="text-gray-900">{product.categoryName}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Tag: </span>
-                <span className="text-gray-900">Vegetables, Healthy, {product.categoryName}, {product.name.split(' ')[0]}</span>
               </div>
             </div>
 

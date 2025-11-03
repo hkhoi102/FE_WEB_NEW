@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 const Contact = () => {
+  const mapEmbedUrl = (import.meta as any).env?.VITE_MAPS_EMBED_URL || 'https://www.google.com/maps?output=embed&hl=vi&q=Nguy%E1%BB%85n%20V%C4%83n%20B%E1%BA%A3o%2F12%20%C4%90.%20H%E1%BA%A1nh%20Th%C3%B4ng%2C%20Ph%C6%B0%E1%BB%9Dng%2C%20G%C3%B2%20V%E1%BA%A5p%2C%20Th%C3%A0nh%20ph%E1%BB%91%20H%E1%BB%93%20Ch%C3%AD%20Minh%20700000%2C%20Vi%E1%BB%87t%20Nam'
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -53,7 +54,7 @@ const Contact = () => {
         </svg>
       ),
       title: 'Email',
-      content: 'dhcn@iuh.edu.vn'
+      content: 'support@sieuthi.vn'
     },
     {
       icon: (
@@ -61,8 +62,8 @@ const Contact = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
         </svg>
       ),
-      title: 'Điện thoại',
-      content: '028 38940 390'
+      title: 'Hotline',
+      content: '1900 0000 (08:00 – 21:00)'
     }
   ]
 
@@ -209,22 +210,28 @@ const Contact = () => {
             {/* Business Hours */}
             <div className="card">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Giờ làm việc
+                Giờ mở cửa
               </h3>
               <div className="space-y-2 text-gray-600">
                 <div className="flex justify-between">
-                  <span>Thứ 2 - Thứ 6:</span>
-                  <span>9:00 - 18:00</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Thứ 7:</span>
-                  <span>10:00 - 16:00</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Chủ nhật:</span>
-                  <span>Nghỉ</span>
+                  <span>Thứ 2 – Chủ nhật:</span>
+                  <span>07:30 – 22:00</span>
                 </div>
               </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              {[ 
+                { t: 'Giao nhanh 2H', d: 'Áp dụng nội thành' }, 
+                { t: 'Thẻ thành viên', d: 'Tích điểm nhận ưu đãi' }, 
+                { t: 'Thanh toán đa dạng', d: 'Tiền mặt, thẻ, QR' }, 
+                { t: 'Hỗ trợ 24/7', d: 'Giải đáp mọi thắc mắc' } 
+              ].map((s) => (
+                <div key={s.t} className="p-4 rounded-lg border border-gray-200 bg-white">
+                  <p className="text-sm font-semibold text-gray-900">{s.t}</p>
+                  <p className="text-xs text-gray-600">{s.d}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -238,10 +245,11 @@ const Contact = () => {
         <div className="rounded-lg overflow-hidden">
           <iframe
             title="Google Map"
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3918.231234567890!2d106.6842705!3d10.8221642!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3174deb3ef536f31%3A0x8b7bb8b7c956157b!2sIndustrial%20University%20of%20Ho%20Chi%20Minh%20City!5e0!3m2!1sen!2s!4v1234567890123!5m2!1sen!2s"
+            src={mapEmbedUrl}
             className="w-full h-96 border-0"
             loading="lazy"
             referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
           />
         </div>
       </section>

@@ -175,12 +175,12 @@ const Checkout: React.FC = () => {
             <p className="text-gray-600 mb-6">Bạn cần đăng nhập để tiếp tục thanh toán</p>
           </div>
           <div className="space-y-3">
-            <a
-              href="http://localhost:3000/login"
+            <Link
+              to="/user-login"
               className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors font-medium inline-block"
             >
               Đăng nhập
-            </a>
+            </Link>
             <Link
               to="/cart"
               className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium inline-block"
@@ -198,7 +198,8 @@ const Checkout: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-          <Link to="/" className="hover:text-primary-600">Trang chủ</Link>
+          <Link to="/home" className="hover:text-primary-600">Trang chủ</Link>
+          <Link to="/home" className="hover:text-primary-600">Trang chủ</Link>
           <span>›</span>
           <Link to="/cart" className="hover:text-primary-600">Giỏ hàng</Link>
           <span>›</span>
