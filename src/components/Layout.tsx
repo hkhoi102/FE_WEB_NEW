@@ -4,6 +4,7 @@ import CategoryMenu from './CategoryMenu'
 import { useCart } from '../contexts/CartContext'
 import { useUserAuth } from '../contexts/UserAuthContext'
 import { ProductService, type Product, type ProductUnit } from '@/services/productService'
+import { ChatWidget } from '@/components'
 
 interface LayoutProps {
   children: ReactNode
@@ -300,6 +301,9 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
         </div>
       </footer>
+
+      {/* Chat support */}
+      <ChatWidget />
     </div>
   )
 }
