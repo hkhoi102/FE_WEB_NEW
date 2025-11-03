@@ -23,8 +23,10 @@ const ProductCard = ({
     }).format(amount)
   }
 
-  // Get image URL - prioritize imageUrl prop, fallback to mapped images
+  // Get image URL - prioritize unit image, then product image, else mapped fallback
   const getImageUrl = () => {
+    const defaultUnit = (product.productUnits && product.productUnits.find(u => u.isDefault)) || product.productUnits?.[0]
+    if (defaultUnit?.imageUrl) return defaultUnit.imageUrl
     if (product.imageUrl) return product.imageUrl
 
     const imageMap: { [key: string]: string } = {

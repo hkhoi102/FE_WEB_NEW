@@ -13,6 +13,7 @@ export interface ProductUnit {
   convertedPrice?: number
   quantity?: number
   availableQuantity?: number
+  imageUrl?: string | null
 }
 
 export interface Barcode {
@@ -148,6 +149,7 @@ export class ProductService {
       convertedPrice: typeof u.convertedPrice === 'number' ? u.convertedPrice : undefined,
       quantity: typeof u.quantity === 'number' ? u.quantity : undefined,
       availableQuantity: typeof u.availableQuantity === 'number' ? u.availableQuantity : undefined,
+      imageUrl: ProductService.toAbsoluteUrl(u.imageUrl ?? u.image_url) ?? null,
     })
 
     const mapProduct = (p: any): Product => ({
@@ -300,6 +302,7 @@ export class ProductService {
       convertedPrice: typeof u.convertedPrice === 'number' ? u.convertedPrice : undefined,
       quantity: typeof u.quantity === 'number' ? u.quantity : undefined,
       availableQuantity: typeof u.availableQuantity === 'number' ? u.availableQuantity : undefined,
+      imageUrl: this.toAbsoluteUrl(u.imageUrl ?? u.image_url) ?? null,
     })
     const prod: Product = {
       id: data.id,
@@ -340,6 +343,7 @@ export class ProductService {
       convertedPrice: typeof u.convertedPrice === 'number' ? u.convertedPrice : undefined,
       quantity: typeof u.quantity === 'number' ? u.quantity : undefined,
       availableQuantity: typeof u.availableQuantity === 'number' ? u.availableQuantity : undefined,
+      imageUrl: this.toAbsoluteUrl(u.imageUrl ?? u.image_url) ?? null,
     })
     const prod: Product = {
       id: data.id,
@@ -630,6 +634,25 @@ export class ProductService {
       body: form,
     })
     if (!res.ok) throw new Error(`Failed to update product image: ${res.status} ${res.statusText}`)
+    const result = await res.json().catch(() => ({}))
+    return result.data ?? result
+  }
+
+  // Update product unit image by ID (multipart PUT)
+  static async updateUnitImage(productId: number, unitId: number, imageFile: File): Promise<any> {
+    const form = new FormData()
+    form.append('image', imageFile)
+    const res = await fetch(`${API_BASE_URL}/products/${productId}/units/${unitId}/image`, {
+      method: 'PUT',
+      headers: (() => {
+        const headers: Record<string, string> = {}
+        const token = localStorage.getItem('access_token')
+        if (token) headers['Authorization'] = `Bearer ${token}`
+        return headers
+      })(),
+      body: form,
+    })
+    if (!res.ok) throw new Error(`Failed to update unit image: ${res.status} ${res.statusText}`)
     const result = await res.json().catch(() => ({}))
     return result.data ?? result
   }

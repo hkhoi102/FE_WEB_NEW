@@ -20,6 +20,8 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
   }
 
   const getImageUrl = () => {
+    const defaultUnit = (product.productUnits && product.productUnits.find(u => u.isDefault)) || product.productUnits?.[0]
+    if (defaultUnit?.imageUrl) return defaultUnit.imageUrl
     if (product.imageUrl) return product.imageUrl
 
     const imageMap: { [key: string]: string } = {

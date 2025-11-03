@@ -473,7 +473,7 @@ const Checkout: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-gray-100 rounded-lg">
                         <img
-                          src={item.imageUrl || "/images/fresh_fruit.png"}
+                          src={item.imageUrl || item.productUnits?.find(u => u.id === item.unitId)?.imageUrl || "/images/fresh_fruit.png"}
                           alt={item.name}
                           className="w-full h-full object-cover rounded-lg"
                         />

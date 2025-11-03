@@ -97,7 +97,7 @@ const Cart: React.FC = () => {
                         <div className="flex items-center gap-4">
                           <div className="w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
                             <img
-                              src={item.imageUrl || '/images/fresh_fruit.png'}
+                              src={item.imageUrl || item.productUnits?.find(u => u.id === item.unitId)?.imageUrl || '/images/fresh_fruit.png'}
                               alt={item.name}
                               className="w-full h-full object-cover"
                             />
