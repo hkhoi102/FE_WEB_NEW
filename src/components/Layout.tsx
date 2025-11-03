@@ -79,8 +79,8 @@ const Layout = ({ children }: LayoutProps) => {
         suggestAbortRef.current?.abort()
         const controller = new AbortController()
         suggestAbortRef.current = controller
-        const res = await ProductService.getProducts(1, 5, term)
-        setSuggestions(res.products)
+        const res = await ProductService.searchProducts(term, 8)
+        setSuggestions(res)
       } catch (_err) {
         setSuggestions([])
       }
@@ -242,28 +242,8 @@ const Layout = ({ children }: LayoutProps) => {
         {/* Nav bar */}
         <div className="border-t border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-between relative">
-            <div className="relative" ref={categoriesRef}>
-              <button onClick={() => setIsCategoriesOpen((v) => !v)} className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                <span className="truncate max-w-32">
-                  {currentCategory || 'Tất cả danh mục'}
-                </span>
-                <svg className="w-4 h-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
-              </button>
-              {/* Dropdown */}
-              {isCategoriesOpen && (
-                <div className="absolute z-30 mt-2 md:block">
-                  <CategoryMenu
-                    activeCategory={currentCategory}
-                    onSelect={(category) => {
-                      console.log('Selected category:', category)
-                      setIsCategoriesOpen(false)
-                      navigate(`/products?category=${encodeURIComponent(category.name)}`)
-                    }}
-                  />
-                </div>
-              )}
-            </div>
+            {/* Categories dropdown removed per request */}
+            <div></div>
 
             <nav className="hidden md:flex items-center gap-6">
               {navItems.map((item) => (

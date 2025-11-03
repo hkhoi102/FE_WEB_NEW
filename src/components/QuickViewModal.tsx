@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Product } from '../services/productService'
 import { useCart } from '../contexts/CartContext'
+import xaFallback from '@/images/xa.webp'
 
 interface QuickViewModalProps {
   product: Product & { imageUrl?: string; originalPrice?: number }
@@ -38,15 +39,20 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
       'Kẹo mút Chupa Chups': '/images/snacks.png',
       'Sữa đặc Ông Thọ': '/images/Beauty_Health.png'
     }
-    return imageMap[product.name] || '/images/fresh_fruit.png'
+    return imageMap[product.name] || xaFallback
   }
 
+
+  // Tính tồn kho theo đơn vị mặc định
+  const defaultUnit = (product.productUnits && product.productUnits.find(u => u.isDefault)) || product.productUnits?.[0]
+  const availableQty = (defaultUnit?.quantity ?? defaultUnit?.availableQuantity) as number | null | undefined
+  const isOutOfStock = availableQty == null || availableQty <= 0
 
   const handleAddToCart = () => {
     // Block adding if all units have no price
     const units = product.productUnits || []
     const hasAnyPrice = units.some(u => typeof (u.currentPrice ?? u.convertedPrice) === 'number' && (u.currentPrice ?? u.convertedPrice)! > 0)
-    if (!hasAnyPrice) return
+    if (!hasAnyPrice || isOutOfStock) return
     for (let i = 0; i < quantity; i++) {
       addToCart(product)
     }
@@ -101,9 +107,11 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
           <div className="p-6 flex flex-col">
             {/* Product Status */}
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-sm text-primary-600 bg-primary-50 px-2 py-1 rounded">
-                Còn hàng
-              </span>
+              {isOutOfStock ? (
+                <span className="text-sm text-white bg-red-600 px-2 py-1 rounded">Hết hàng</span>
+              ) : (
+                <span className="text-sm text-white bg-green-600 px-2 py-1 rounded">Còn hàng</span>
+              )}
               {hasDiscount && (
                 <span className="text-sm text-red-600 bg-red-50 px-2 py-1 rounded">
                   {discountPercent}% Off
@@ -191,9 +199,9 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
               <button
                 onClick={handleAddToCart}
                 className="flex-1 bg-primary-600 text-white py-3 px-6 rounded-lg hover:bg-primary-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                disabled={!((product.productUnits||[]).some(u => typeof (u.currentPrice ?? u.convertedPrice) === 'number' && (u.currentPrice ?? u.convertedPrice)! > 0))}
+                disabled={!( (product.productUnits||[]).some(u => typeof (u.currentPrice ?? u.convertedPrice) === 'number' && (u.currentPrice ?? u.convertedPrice)! > 0) ) || isOutOfStock}
               >
-                {((product.productUnits||[]).some(u => typeof (u.currentPrice ?? u.convertedPrice) === 'number' && (u.currentPrice ?? u.convertedPrice)! > 0)) ? 'Thêm vào Giỏ' : 'Liên hệ để mua'}
+                {isOutOfStock ? 'Hết hàng' : (((product.productUnits||[]).some(u => typeof (u.currentPrice ?? u.convertedPrice) === 'number' && (u.currentPrice ?? u.convertedPrice)! > 0)) ? 'Thêm vào Giỏ' : 'Liên hệ để mua')}
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l-1 12H6L5 9z"/>
                 </svg>

@@ -186,16 +186,21 @@ const Home = () => {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
             {products.length > 0 ? (
-              products.slice(0, 10).map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={{
-                    ...product,
-                    imageUrl: product.imageUrl || undefined,
-                    originalPrice: undefined
-                  }}
-                />
-              ))
+              (() => {
+                const expanded = products.flatMap((p) => {
+                  const units = p.productUnits && p.productUnits.length ? p.productUnits : [undefined as any]
+                  return units.map((u: any, idx: number) => ({
+                    ...p,
+                    id: u ? `${p.id}-${u.id}` : `${p.id}-${idx}`,
+                    productUnits: u ? [u] : p.productUnits,
+                    imageUrl: (u?.imageUrl as string) || (p.imageUrl || undefined),
+                    originalPrice: undefined,
+                  }))
+                })
+                return expanded.slice(0, 10).map((item: any) => (
+                  <ProductCard key={item.id} product={item} />
+                ))
+              })()
             ) : (
               <div className="col-span-full text-center py-8 text-gray-500">
                 Chưa có sản phẩm nào
@@ -253,16 +258,21 @@ const Home = () => {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
             {products.length > 0 ? (
-              products.slice(0, 5).map((product) => (
-                <ProductCard
-                  key={`featured-${product.id}`}
-                  product={{
-                    ...product,
-                    imageUrl: product.imageUrl || undefined,
-                    originalPrice: undefined
-                  }}
-                />
-              ))
+              (() => {
+                const expanded = products.flatMap((p) => {
+                  const units = p.productUnits && p.productUnits.length ? p.productUnits : [undefined as any]
+                  return units.map((u: any, idx: number) => ({
+                    ...p,
+                    id: u ? `${p.id}-${u.id}` : `${p.id}-${idx}`,
+                    productUnits: u ? [u] : p.productUnits,
+                    imageUrl: (u?.imageUrl as string) || (p.imageUrl || undefined),
+                    originalPrice: undefined,
+                  }))
+                })
+                return expanded.slice(0, 5).map((item: any, i: number) => (
+                  <ProductCard key={`featured-${item.id}-${i}`} product={item} />
+                ))
+              })()
             ) : (
               <div className="col-span-full text-center py-8 text-gray-500">
                 Chưa có sản phẩm nào

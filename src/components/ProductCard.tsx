@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Product } from '../services/productService'
 import { useCart } from '../contexts/CartContext'
 import QuickViewModal from './QuickViewModal'
+import xaFallback from '@/images/xa.webp'
 
 interface ProductCardProps extends HTMLAttributes<HTMLDivElement> {
   product: Product & { imageUrl?: string; originalPrice?: number }
@@ -43,7 +44,7 @@ const ProductCard = ({
       'Kẹo mút Chupa Chups': '/images/snacks.png',
       'Sữa đặc Ông Thọ': '/images/Beauty_Health.png'
     }
-    return imageMap[product.name] || '/images/fresh_fruit.png'
+    return imageMap[product.name] || xaFallback
   }
 
   // Derive display unit and price from productUnits
@@ -52,6 +53,10 @@ const ProductCard = ({
   const displayPrice = defaultUnit?.currentPrice ?? defaultUnit?.convertedPrice
   const hasPrice = typeof displayPrice === 'number' && (displayPrice as number) > 0
   const hasDiscount = false
+
+  // Out-of-stock condition: consider both quantity and availableQuantity from BE
+  const availableQty = (defaultUnit?.quantity ?? defaultUnit?.availableQuantity) as number | null | undefined
+  const isOutOfStock = availableQty == null || availableQty <= 0
 
   // Show unit count if multiple units (should be 1 now since we expanded)
   const unitCount = product.productUnits?.length || 0
@@ -70,6 +75,17 @@ const ProductCard = ({
             alt={product.name}
             className="object-cover w-full h-full"
           />
+
+          {/* Stock status badge */}
+          {isOutOfStock ? (
+            <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded">
+              Hết hàng
+            </div>
+          ) : (
+            <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded">
+              Còn hàng
+            </div>
+          )}
 
           {/* Quick View Button - appears on hover */}
           <div className={`absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
@@ -126,13 +142,13 @@ const ProductCard = ({
 
         <button
           onClick={() => {
-            if (!hasPrice) return
+            if (!hasPrice || isOutOfStock) return
             addToCart(product)
           }}
-          disabled={!hasPrice}
-          className={`mt-2 w-full text-white text-sm py-2 rounded-lg transition-colors ${hasPrice ? 'bg-primary-600 hover:bg-primary-700' : 'bg-gray-300 cursor-not-allowed'}`}
+          disabled={!hasPrice || isOutOfStock}
+          className={`mt-2 w-full text-white text-sm py-2 rounded-lg transition-colors ${(!hasPrice || isOutOfStock) ? 'bg-gray-300 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'}`}
         >
-          {hasPrice ? 'Thêm vào giỏ' : 'Liên hệ để mua'}
+          {isOutOfStock ? 'Hết hàng' : (hasPrice ? 'Thêm vào giỏ' : 'Liên hệ để mua')}
         </button>
       </div>
     </div>

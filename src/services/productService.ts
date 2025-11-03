@@ -184,6 +184,58 @@ export class ProductService {
     }
   }
 
+  // Tìm kiếm sản phẩm qua endpoint chuyên dụng /products/search?q=
+  static async searchProducts(query: string, limit: number = 10): Promise<Product[]> {
+    const params = new URLSearchParams()
+    if (query) params.append('q', query)
+    if (limit) params.append('size', String(limit))
+
+    const res = await fetch(`${API_BASE_URL}/products/search?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(text || `Failed to search products: ${res.status} ${res.statusText}`)
+    }
+    const result = await res.json()
+
+    const mapUnit = (u: any): ProductUnit => ({
+      id: u.id,
+      unitId: u.unitId,
+      unitName: u.unitName,
+      conversionFactor: u.conversionFactor ?? u.conversionRate ?? 1,
+      isDefault: !!u.isDefault,
+      active: u.active !== undefined ? u.active : true,
+      code: u.code,
+      currentPrice: typeof u.currentPrice === 'number' ? u.currentPrice : undefined,
+      convertedPrice: typeof u.convertedPrice === 'number' ? u.convertedPrice : undefined,
+      quantity: typeof u.quantity === 'number' ? u.quantity : undefined,
+      availableQuantity: typeof u.availableQuantity === 'number' ? u.availableQuantity : undefined,
+      imageUrl: ProductService.toAbsoluteUrl(u.imageUrl ?? u.image_url) ?? null,
+    })
+
+    const mapProduct = (p: any): Product => ({
+      id: p.id,
+      name: p.name,
+      code: p.code,
+      description: p.description ?? '',
+      imageUrl: ProductService.toAbsoluteUrl(p.imageUrl ?? p.image_url) ?? null,
+      expirationDate: p.expirationDate ?? null,
+      categoryId: p.categoryId,
+      categoryName: p.categoryName,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      active: p.active,
+      defaultUnitId: p.defaultUnitId ?? null,
+      productUnits: Array.isArray(p.productUnits) ? p.productUnits.map(mapUnit) : [],
+      barcodes: p.barcodes ?? null,
+    })
+
+    const dataArray = Array.isArray(result?.data) ? result.data : Array.isArray(result) ? result : []
+    return dataArray.map(mapProduct)
+  }
+
   static async getCategories(): Promise<ProductCategory[]> {
     const res = await fetch(`${API_BASE_URL}/categories`, {
       method: 'GET',

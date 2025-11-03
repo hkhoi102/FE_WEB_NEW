@@ -56,28 +56,47 @@ const Products: React.FC = () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await ProductService.getProducts(
-        currentPage,
-        20,
-        searchTerm || undefined,
-        selectedCategory?.id
-      )
+      const pageSize = 20
+      if (searchTerm) {
+        // Dùng endpoint search khi có từ khóa để đảm bảo độ chính xác
+        const results = await ProductService.searchProducts(searchTerm, pageSize)
+        // Không có phân trang từ BE => giả lập phân trang client-side
+        const start = (currentPage - 1) * pageSize
+        const pageItems = results.slice(start, start + pageSize)
+        const totalPages = Math.max(1, Math.ceil(results.length / pageSize))
 
-      setProductsData({
-        products: response.products,
-        totalCount: response.pagination.total_items,
-        currentPage: response.pagination.current_page,
-        totalPages: response.pagination.total_pages,
-        hasNextPage: response.pagination.current_page < response.pagination.total_pages,
-        hasPrevPage: response.pagination.current_page > 1
-      })
+        setProductsData({
+          products: pageItems,
+          totalCount: results.length,
+          currentPage,
+          totalPages,
+          hasNextPage: currentPage < totalPages,
+          hasPrevPage: currentPage > 1
+        })
+      } else {
+        const response = await ProductService.getProducts(
+          currentPage,
+          pageSize,
+          undefined,
+          selectedCategory?.id
+        )
 
-      console.log('Products loaded:', {
-        currentPage: response.pagination.current_page,
-        totalPages: response.pagination.total_pages,
-        totalCount: response.pagination.total_items,
-        productsCount: response.products.length
-      })
+        setProductsData({
+          products: response.products,
+          totalCount: response.pagination.total_items,
+          currentPage: response.pagination.current_page,
+          totalPages: response.pagination.total_pages,
+          hasNextPage: response.pagination.current_page < response.pagination.total_pages,
+          hasPrevPage: response.pagination.current_page > 1
+        })
+
+        console.log('Products loaded:', {
+          currentPage: response.pagination.current_page,
+          totalPages: response.pagination.total_pages,
+          totalCount: response.pagination.total_items,
+          productsCount: response.products.length
+        })
+      }
     } catch (error) {
       console.error('Error fetching products:', error)
       setError('Không thể tải danh sách sản phẩm. Vui lòng thử lại.')
