@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { UserAuthProvider } from '@/contexts/UserAuthContext'
 import { CartProvider } from '@/contexts/CartContext'
@@ -29,10 +29,11 @@ function App() {
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
-              <Route path="/user-login" element={<UserLogin />} />
+              <Route path="/user-login" element={<Navigate to="/login" replace />} />
 
               {/* Protected routes with layout */}
-              <Route path="/" element={<Layout><Home /></Layout>} />
+              <Route path="/" element={<Navigate to="/home" replace />} />
+              <Route path="/home" element={<Layout><Home /></Layout>} />
               <Route path="/about" element={<Layout><About /></Layout>} />
               <Route path="/contact" element={<Layout><Contact /></Layout>} />
               <Route path="/products" element={<Layout><Products /></Layout>} />

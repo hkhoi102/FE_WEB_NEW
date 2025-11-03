@@ -1,4 +1,5 @@
 import { HTMLAttributes } from 'react'
+import { Link } from 'react-router-dom'
 
 interface PromoCardProps extends HTMLAttributes<HTMLDivElement> {
   label?: string
@@ -35,9 +36,9 @@ const PromoCard = ({
           <span className="self-start bg-yellow-400 text-gray-900 text-xs font-semibold px-2 py-1 rounded">{badgeText}</span>
         )}
         <div className="mt-auto">
-          <button className="bg-white text-primary-700 hover:bg-gray-100 text-sm font-medium px-4 py-2 rounded-full">
+          <Link to="/products" className="inline-block bg-white text-primary-700 hover:bg-gray-100 text-sm font-medium px-4 py-2 rounded-full">
             Mua ngay
-          </button>
+          </Link>
         </div>
       </div>
     </div>

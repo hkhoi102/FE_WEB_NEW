@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { CategoryCard, ProductCard, SectionHeader, PromoCard, TestimonialCard } from '@/components'
 import { CategoryService, type Category } from '@/services/categoryService'
 import { ProductService, type Product } from '@/services/productService'
+import { ReviewService, type ReviewItem } from '@/services/reviewService'
 import bannerImg from '@/images/Bannar_Big-removebg-preview.png'
 import freshFruit from '@/images/fresh_fruit.png'
 import snacksImg from '@/images/snacks.png'
@@ -29,6 +30,9 @@ const Home = () => {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [reviews, setReviews] = useState<ReviewItem[]>([])
+  const [reviewPage, setReviewPage] = useState<number>(0)
+  const ITEMS_PER_REVIEW_PAGE = 3
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,13 +41,16 @@ const Home = () => {
         setError(null)
 
         // Load categories and products in parallel
-        const [categoriesData, productsResponse] = await Promise.all([
+        const [categoriesData, productsResponse, reviewsData] = await Promise.all([
           CategoryService.getCategories(),
-          ProductService.getProducts(1, 10) // Get first 10 products
+          ProductService.getProducts(1, 10),
+          ReviewService.getTopReviews(5)
         ])
 
         setCategories(categoriesData)
         setProducts(productsResponse.products)
+        setReviews(reviewsData)
+        setReviewPage(0)
       } catch (err) {
         console.error('Error fetching data:', err)
         setError('Không thể tải dữ liệu')
@@ -77,7 +84,7 @@ const Home = () => {
             <p className="uppercase tracking-wide text-primary-100 text-sm mb-2">Chào mừng đến với Siêu Thị Thông Minh</p>
             <h1 className="text-3xl md:text-5xl font-bold leading-tight">Thực phẩm hữu cơ tươi và tốt cho sức khỏe</h1>
             <p className="mt-4 text-primary-100 max-w-md">Giảm đến 30% OFF. Miễn phí vận chuyển cho đơn hàng đầu tiên.</p>
-            <Link to="/contact" className="inline-block mt-6 bg-white text-primary-700 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100">Mua ngay</Link>
+            <Link to="/products" className="inline-block mt-6 bg-white text-primary-700 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100">Mua ngay</Link>
           </div>
         </div>
 
@@ -214,7 +221,7 @@ const Home = () => {
             <h3 className="text-2xl md:text-3xl font-bold">Tiết kiệm 37% trên mỗi đơn hàng</h3>
             <p className="text-gray-300 mt-2">Miễn phí vận chuyển cho đơn hàng đầu tiên.</p>
           </div>
-          <Link to="#" className="bg-white text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100">Mua ngay</Link>
+          <Link to="/products" className="bg-white text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100">Mua ngay</Link>
         </div>
       </section>
 
@@ -267,12 +274,52 @@ const Home = () => {
 
       {/* Client Testimonials */}
       <section>
-        <SectionHeader title="Đánh giá của khách hàng" action={<div className="flex items-center gap-3"><button aria-label="Previous" className="w-9 h-9 rounded-full bg-white border border-gray-300 grid place-items-center hover:bg-gray-50"><svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg></button><button aria-label="Next" className="w-9 h-9 rounded-full bg-green-600 text-white grid place-items-center hover:bg-green-700"><svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg></button></div>} />
-        <div className="grid md:grid-cols-3 gap-6">
-          <TestimonialCard quote="Pellentesque eu nibh eget mauris congue mattis mattis nec tellus. Phasellus imperdiet elit eu magna dictum, bibendum cursus velit sodales. Donec sed neque eget" name="Robert Fox" />
-          <TestimonialCard quote="Pellentesque eu nibh eget mauris congue mattis mattis nec tellus. Phasellus imperdiet elit eu magna dictum, bibendum cursus velit sodales. Donec sed neque eget" name="Dianne Russell" />
-          <TestimonialCard quote="Pellentesque eu nibh eget mauris congue mattis mattis nec tellus. Phasellus imperdiet elit eu magna dictum, bibendum cursus velit sodales. Donec sed neque eget" name="Eleanor Pena" />
-        </div>
+        {(() => {
+          const total = reviews.length
+          const pageCount = Math.max(1, Math.ceil(total / ITEMS_PER_REVIEW_PAGE))
+          const clampedPage = total ? (reviewPage % pageCount + pageCount) % pageCount : 0
+          const start = clampedPage * ITEMS_PER_REVIEW_PAGE
+          const visible: ReviewItem[] = (() => {
+            if (!total) return []
+            if (start + ITEMS_PER_REVIEW_PAGE <= total) return reviews.slice(start, start + ITEMS_PER_REVIEW_PAGE)
+            const endCount = (start + ITEMS_PER_REVIEW_PAGE) - total
+            return [...reviews.slice(start, total), ...reviews.slice(0, endCount)]
+          })()
+
+          const goPrev = () => setReviewPage((p) => (p - 1 + pageCount) % pageCount)
+          const goNext = () => setReviewPage((p) => (p + 1) % pageCount)
+
+          return (
+            <>
+              <SectionHeader
+                title="Đánh giá của khách hàng"
+                action={
+                  <div className="flex items-center gap-3">
+                    <button
+                      aria-label="Previous"
+                      onClick={goPrev}
+                      className="w-9 h-9 rounded-full bg-white border border-gray-300 text-gray-600 grid place-items-center transition-colors hover:bg-green-600 hover:text-white hover:border-green-600 active:bg-green-700 active:border-green-700"
+                    >
+                      <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button
+                      aria-label="Next"
+                      onClick={goNext}
+                      className="w-9 h-9 rounded-full bg-white border border-gray-300 text-gray-600 grid place-items-center transition-colors hover:bg-green-600 hover:text-white hover:border-green-600 active:bg-green-700 active:border-green-700"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                  </div>
+                }
+              />
+              <div className="grid md:grid-cols-3 gap-6">
+                {visible.map((r) => (
+                  <TestimonialCard key={`${clampedPage}-${r.id}`} quote={r.quote} name={r.name} role={r.role || 'Khách hàng'} avatarUrl={r.avatarUrl} />
+                ))}
+              </div>
+            </>
+          )
+        })()}
       </section>
     </div>
   )

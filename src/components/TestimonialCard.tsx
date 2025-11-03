@@ -17,11 +17,6 @@ const TestimonialCard = ({ quote, name, role = 'Customer', avatarUrl, className 
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt={name} className="w-10 h-10 rounded-full object-cover" />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-gray-200" />
-          )}
           <div>
             <p className="text-gray-900 font-medium text-sm">{name}</p>
             <p className="text-xs text-gray-500">{role}</p>

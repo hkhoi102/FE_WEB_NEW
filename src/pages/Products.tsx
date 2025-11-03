@@ -33,6 +33,8 @@ const Products: React.FC = () => {
 
   // Handle URL search params
   useEffect(() => {
+    // Scroll to top when opening Products page
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     const urlSearchTerm = searchParams.get('search')
     const urlCategoryId = searchParams.get('categoryId')
     const urlCategoryName = searchParams.get('category')
@@ -42,8 +44,9 @@ const Products: React.FC = () => {
       setSelectedCategory(null) // Clear category filter when searching from header
     }
 
-    if (urlCategoryId && urlCategoryName) {
-      setSelectedCategory({ id: parseInt(urlCategoryId), name: urlCategoryName })
+    if (urlCategoryName) {
+      const parsedId = urlCategoryId ? parseInt(urlCategoryId) : 0
+      setSelectedCategory({ id: isNaN(parsedId) ? 0 : parsedId, name: urlCategoryName })
       setSearchTerm('') // Clear search when filtering by category
     }
   }, [searchParams])
@@ -138,7 +141,7 @@ const Products: React.FC = () => {
           {/* Sidebar - Category Menu */}
           <div className="lg:w-64 flex-shrink-0">
             <CategoryMenu
-              initialActive={0}
+              initialActive={-1}
               activeCategory={selectedCategory?.name}
               onSelect={handleCategorySelect}
             />
