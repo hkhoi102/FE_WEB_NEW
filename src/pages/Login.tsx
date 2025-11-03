@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
+import { useUserAuth } from '@/contexts/UserAuthContext'
 
 const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuth()
+  const { login: adminLogin } = useAuth()
+  const { login: userLogin } = useUserAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -16,12 +18,21 @@ const Login = () => {
     setIsLoading(true)
 
     try {
-      const success = await login(email, password)
-      if (success) {
+      // Try ADMIN/MANAGER login first
+      const adminOk = await adminLogin(email, password)
+      if (adminOk) {
         navigate('/admin')
-      } else {
-        setError('Email hoặc mật khẩu không đúng, hoặc tài khoản không có quyền truy cập')
+        return
       }
+
+      // Fallback to USER login
+      const userOk = await userLogin(email, password)
+      if (userOk) {
+        navigate('/home')
+        return
+      }
+
+      setError('Email hoặc mật khẩu không đúng, hoặc tài khoản không có quyền truy cập')
     } catch (error) {
       setError('Có lỗi xảy ra, vui lòng thử lại sau')
     } finally {
@@ -33,8 +44,7 @@ const Login = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-gray-900">Đăng nhập Admin</h2>
-          <p className="mt-2 text-sm text-gray-600">Vui lòng đăng nhập để truy cập trang quản trị</p>
+          <h2 className="text-3xl font-bold text-gray-900">Đăng nhập</h2>
         </div>
       </div>
 
@@ -94,14 +104,6 @@ const Login = () => {
             </div>
           </form>
 
-          <div className="mt-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-              <h3 className="text-sm font-medium text-blue-800 mb-2">Lưu ý:</h3>
-              <p className="text-sm text-blue-700">
-                Chỉ tài khoản có role <strong>ADMIN</strong> hoặc <strong>MANAGER</strong> mới có thể đăng nhập vào trang quản trị.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -29,7 +29,7 @@ function App() {
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
-              <Route path="/user-login" element={<UserLogin />} />
+              <Route path="/user-login" element={<Navigate to="/login" replace />} />
 
               {/* Protected routes with layout */}
               <Route path="/" element={<Navigate to="/home" replace />} />

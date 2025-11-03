@@ -102,7 +102,6 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-10 flex items-center justify-between">
           <p>Chào mừng đến với Siêu Thị Thông Minh — Thực phẩm tươi ngon giao hàng nhanh chóng</p>
           <div className="flex items-center gap-6">
-            <span>Trợ giúp</span>
             <Link to="/my-orders" className="hover:text-white underline-offset-2 hover:underline">Theo dõi đơn hàng</Link>
             <span>Liên hệ: +84 123 456 789</span>
           </div>

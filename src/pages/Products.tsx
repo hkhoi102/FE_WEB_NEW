@@ -33,6 +33,8 @@ const Products: React.FC = () => {
 
   // Handle URL search params
   useEffect(() => {
+    // Scroll to top when opening Products page
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     const urlSearchTerm = searchParams.get('search')
     const urlCategoryId = searchParams.get('categoryId')
     const urlCategoryName = searchParams.get('category')

@@ -84,7 +84,7 @@ const Home = () => {
             <p className="uppercase tracking-wide text-primary-100 text-sm mb-2">Chào mừng đến với Siêu Thị Thông Minh</p>
             <h1 className="text-3xl md:text-5xl font-bold leading-tight">Thực phẩm hữu cơ tươi và tốt cho sức khỏe</h1>
             <p className="mt-4 text-primary-100 max-w-md">Giảm đến 30% OFF. Miễn phí vận chuyển cho đơn hàng đầu tiên.</p>
-            <Link to="/contact" className="inline-block mt-6 bg-white text-primary-700 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100">Mua ngay</Link>
+            <Link to="/products" className="inline-block mt-6 bg-white text-primary-700 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100">Mua ngay</Link>
           </div>
         </div>
 
@@ -221,7 +221,7 @@ const Home = () => {
             <h3 className="text-2xl md:text-3xl font-bold">Tiết kiệm 37% trên mỗi đơn hàng</h3>
             <p className="text-gray-300 mt-2">Miễn phí vận chuyển cho đơn hàng đầu tiên.</p>
           </div>
-          <Link to="#" className="bg-white text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100">Mua ngay</Link>
+          <Link to="/products" className="bg-white text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100">Mua ngay</Link>
         </div>
       </section>
 
