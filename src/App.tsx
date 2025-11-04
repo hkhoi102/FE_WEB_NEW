@@ -34,14 +34,16 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/user-login" element={<Navigate to="/login" replace />} />
 
-              {/* Protected customer routes with layout */}
+              {/* Public customer routes with layout - no login required */}
               <Route path="/" element={<Navigate to="/home" replace />} />
-              <Route path="/home" element={<CustomerProtectedRoute><Layout><Home /></Layout></CustomerProtectedRoute>} />
-              <Route path="/about" element={<CustomerProtectedRoute><Layout><About /></Layout></CustomerProtectedRoute>} />
-              <Route path="/contact" element={<CustomerProtectedRoute><Layout><Contact /></Layout></CustomerProtectedRoute>} />
-              <Route path="/products" element={<CustomerProtectedRoute><Layout><Products /></Layout></CustomerProtectedRoute>} />
-              <Route path="/product/:id" element={<CustomerProtectedRoute><Layout><ProductDetail /></Layout></CustomerProtectedRoute>} />
-              <Route path="/cart" element={<CustomerProtectedRoute><Layout><Cart /></Layout></CustomerProtectedRoute>} />
+              <Route path="/home" element={<Layout><Home /></Layout>} />
+              <Route path="/about" element={<Layout><About /></Layout>} />
+              <Route path="/contact" element={<Layout><Contact /></Layout>} />
+              <Route path="/products" element={<Layout><Products /></Layout>} />
+              <Route path="/product/:id" element={<Layout><ProductDetail /></Layout>} />
+              <Route path="/cart" element={<Layout><Cart /></Layout>} />
+
+              {/* Protected customer routes - login required for checkout and orders */}
               <Route path="/checkout" element={<CustomerProtectedRoute><Layout><Checkout /></Layout></CustomerProtectedRoute>} />
               <Route path="/payment/:orderId" element={<CustomerProtectedRoute><Layout><Payment /></Layout></CustomerProtectedRoute>} />
               <Route path="/my-orders" element={<CustomerProtectedRoute><Layout><MyOrders /></Layout></CustomerProtectedRoute>} />

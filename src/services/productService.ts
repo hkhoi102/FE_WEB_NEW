@@ -1,5 +1,5 @@
 // Product Service - API calls for product management
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8085/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 export interface ProductUnit {
   id: number

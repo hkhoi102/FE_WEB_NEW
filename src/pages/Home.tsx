@@ -10,6 +10,8 @@ import snacksImg from '@/images/snacks.png'
 import beveragesImg from '@/images/beverages.png'
 import breadBakeryImg from '@/images/Bread_Bakery.png'
 import dishDetergentsImg from '@/images/Dish_Detergents.png'
+import specialProductImg from '@/images/z7187029658584_ddbe460cf91dbd2486aa5769073529d2.jpg'
+import summerSaleImg from '@/images/z7187029745332_28dbee8aeb07fc48ac8c9987b2a04303.jpg'
 
 // Mapping ảnh cho danh mục (fallback khi API không có ảnh)
 const categoryImageMap: Record<string, string> = {
@@ -89,13 +91,19 @@ const Home = () => {
         </div>
 
         <div className="grid gap-6">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6">
-            <h3 className="font-semibold text-gray-900">Sản phẩm đặc biệt</h3>
-            <p className="text-sm text-gray-600">Uu đãi trong tháng</p>
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative">
+            <img src={specialProductImg} alt="Sản phẩm đặc biệt" className="w-full h-48 object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
+              <h3 className="font-semibold text-white text-lg">Sản phẩm đặc biệt</h3>
+              <p className="text-sm text-white/90">Ưu đãi trong tháng</p>
+            </div>
           </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-6">
-            <h3 className="font-semibold text-gray-900">Khuyến mãi hè</h3>
-            <p className="text-sm text-gray-600">Giảm đến 75%</p>
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative">
+            <img src={summerSaleImg} alt="Khuyến mãi hè" className="w-full h-48 object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
+              <h3 className="font-semibold text-white text-lg">Khuyến mãi hè</h3>
+              <p className="text-sm text-white/90">Giảm đến 75%</p>
+            </div>
           </div>
         </div>
       </section>
@@ -115,7 +123,7 @@ const Home = () => {
 
       {/* Popular Categories */}
       <section>
-        <SectionHeader title="Danh mục" action={<Link to="#" className="text-primary-600 flex items-center gap-1">Tất cả <span>→</span></Link>} />
+        <SectionHeader title="Danh mục" action={<Link to="/products" className="text-primary-600 flex items-center gap-1">Tất cả <span>→</span></Link>} />
 
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -160,7 +168,7 @@ const Home = () => {
 
       {/* Popular Products */}
       <section>
-        <SectionHeader title="Sản phẩm nổi bật" action={<Link to="#" className="text-primary-600">Xem tất cả →</Link>} />
+        <SectionHeader title="Sản phẩm nổi bật" action={<Link to="/products" className="text-primary-600">Xem tất cả →</Link>} />
 
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
@@ -232,7 +240,7 @@ const Home = () => {
 
       {/* Featured Products */}
       <section>
-        <SectionHeader title="Bán chạy nhất" action={<Link to="#" className="text-primary-600">Xem tất cả →</Link>} />
+        <SectionHeader title="Bán chạy nhất" action={<Link to="/products" className="text-primary-600">Xem tất cả →</Link>} />
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
