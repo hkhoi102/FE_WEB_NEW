@@ -46,7 +46,7 @@ const ReturnedOrdersPage: React.FC = () => {
       setLoading(true)
       setError(null)
 
-      const response = await ReturnOrderService.getCompletedReturns({
+      const response: any = await ReturnOrderService.getCompletedReturns({
         page,
         size: 10
       })
@@ -188,8 +188,9 @@ const ReturnedOrdersPage: React.FC = () => {
       if (!orderCode && orderDetail.orderId) {
         try {
           const orderResponse = await OrderApi.getById(orderDetail.orderId)
-          if (orderResponse.success && orderResponse.data) {
-            orderCode = orderResponse.data.orderCode || orderResponse.data.order_code
+          const orderRespAny: any = orderResponse
+          if (orderRespAny?.success && orderRespAny?.data) {
+            orderCode = orderRespAny.data.orderCode || orderRespAny.data.order_code
           }
         } catch (err) {
           console.warn('Could not fetch order details:', err)
