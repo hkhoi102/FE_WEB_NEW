@@ -600,90 +600,6 @@ const CreateOrderManagement: React.FC = () => {
     handleAddProduct()
   }
 
-
-  // Handle barcode scanning from image file
-  const _handleImageBarcodeScan = async (file: File) => {
-    try {
-      setLoading(true)
-      setError(null)
-      setSuccess(null)
-      console.log('📷 Scanning barcode from image:', file.name)
-
-      // Load ZXing library
-      const ensure = () => new Promise<void>((resolve, reject) => {
-        if ((window as any).ZXing && (window as any).ZXing.BrowserMultiFormatReader) return resolve()
-        const s = document.createElement('script')
-        s.src = 'https://unpkg.com/@zxing/library@latest'
-        s.async = true
-        s.onload = () => resolve()
-        s.onerror = () => reject(new Error('Cannot load ZXing'))
-        document.head.appendChild(s)
-      })
-      await ensure()
-
-      const ZX = (window as any).ZXing
-      if (!ZX || !ZX.BrowserMultiFormatReader) {
-        throw new Error('ZXing not available')
-      }
-
-      // Create image element
-      const img = new Image()
-      img.onload = async () => {
-        try {
-          // Create ZXing reader
-          const reader = new ZX.BrowserMultiFormatReader()
-          const hints = new Map()
-          hints.set(ZX.DecodeHintType.POSSIBLE_FORMATS, [
-            ZX.BarcodeFormat.EAN_13,
-            ZX.BarcodeFormat.EAN_8,
-            ZX.BarcodeFormat.CODE_128,
-            ZX.BarcodeFormat.CODE_39,
-            ZX.BarcodeFormat.UPC_A,
-            ZX.BarcodeFormat.UPC_E,
-            ZX.BarcodeFormat.QR_CODE
-          ])
-          hints.set(ZX.DecodeHintType.TRY_HARDER, true)
-          reader.hints = hints
-
-          console.log('📷 Scanning image with ZXing...')
-
-          // Try to decode from image URL
-          const result = await reader.decodeFromImageUrl(img.src)
-
-          if (result && result.getText) {
-            const text = result.getText()
-            console.log('📷 ZXing found barcode from image:', text)
-            await handleBarcodeScan(String(text))
-          } else {
-            showErrorMessage('Không tìm thấy mã vạch trong hình ảnh')
-          }
-        } catch (e: any) {
-          console.error('📷 Image barcode scan error:', e)
-          showErrorMessage('Không thể quét mã vạch từ hình ảnh: ' + (e?.message || 'Lỗi không xác định'))
-        } finally {
-          setLoading(false)
-        }
-      }
-
-      img.onerror = () => {
-        showErrorMessage('Không thể tải hình ảnh')
-        setLoading(false)
-      }
-
-      // Load image from file
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        img.src = e.target?.result as string
-      }
-      reader.readAsDataURL(file)
-
-    } catch (e: any) {
-      console.error('📷 Image barcode scan failed:', e)
-      showErrorMessage('Lỗi khi quét mã vạch từ hình ảnh: ' + (e?.message || 'Lỗi không xác định'))
-      setLoading(false)
-    }
-  }
-
   // Camera barcode scanning using native BarcodeDetector (Chromium-based browsers)
   const startCameraScanner = async () => {
     try {
@@ -1365,47 +1281,6 @@ const CreateOrderManagement: React.FC = () => {
     handleCreateOrder()
   }
 
-  const _handleUpdateQuantity = (productUnitId: number, newQuantity: number) => {
-    // Only remove if explicitly set to 0 or negative, not if input is empty
-    if (newQuantity <= 0) {
-      handleRemoveItem(productUnitId)
-      return
-    }
-
-    setOrderItems(prev => prev.map(item =>
-      item.productUnitId === productUnitId
-        ? { ...item, quantity: newQuantity, subtotal: newQuantity * item.unitPrice }
-        : item
-    ))
-
-    // Update input state to match the new quantity
-    setQuantityInputs(prev => ({
-      ...prev,
-      [productUnitId]: newQuantity.toString()
-    }))
-  }
-
-  const handleQuantityInputChange = (productUnitId: number, value: string) => {
-    // Always update input state first - this allows typing
-    setQuantityInputs(prev => ({
-      ...prev,
-      [productUnitId]: value
-    }))
-
-    // Only update order if value is a valid positive number
-    if (value !== '' && !isNaN(Number(value))) {
-      const numValue = Number(value)
-      if (numValue > 0) {
-        // Update order items without updating input state again
-        setOrderItems(prev => prev.map(item =>
-          item.productUnitId === productUnitId
-            ? { ...item, quantity: numValue, subtotal: numValue * item.unitPrice }
-            : item
-        ))
-      }
-    }
-  }
-
   const calculateTotals = () => {
     const subtotal = orderItems.reduce((sum, item) => sum + item.subtotal, 0)
     let discountAmount = 0
@@ -1445,7 +1320,7 @@ const CreateOrderManagement: React.FC = () => {
       }))
 
       // Tính finalTotal để truyền vào QR code
-      const { subtotal, discountAmount, total } = calculateTotals()
+      const { subtotal, discountAmount } = calculateTotals()
       const computedSubtotal = orderPreview?.data?.totalOriginalAmount ?? subtotal
       const computedDiscount = orderPreview?.data?.totalDiscountAmount ?? discountAmount ?? 0
       const shippingFee = orderPreview?.data?.shippingFee ?? 0

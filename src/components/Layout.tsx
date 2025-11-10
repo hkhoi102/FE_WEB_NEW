@@ -1,6 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import CategoryMenu from './CategoryMenu'
 import { useCart } from '../contexts/CartContext'
 import { useUserAuth } from '../contexts/UserAuthContext'
 import { ProductService, type Product, type ProductUnit } from '@/services/productService'
@@ -16,11 +15,11 @@ const Layout = ({ children }: LayoutProps) => {
   const [searchParams] = useSearchParams()
   const { state: cartState } = useCart()
   const { user, isAuthenticated, logout } = useUserAuth()
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState<boolean>(false)
+  // Categories dropdown removed
   const [headerSearchTerm, setHeaderSearchTerm] = useState<string>('')
   const [suggestions, setSuggestions] = useState<Product[]>([])
   const [isSuggestOpen, setIsSuggestOpen] = useState<boolean>(false)
-  const categoriesRef = useRef<HTMLDivElement | null>(null)
+  // const categoriesRef = useRef<HTMLDivElement | null>(null)
   const suggestAbortRef = useRef<AbortController | null>(null)
 
   const getSuggestionImage = (p: Product, u?: ProductUnit): string | undefined => {
@@ -28,26 +27,9 @@ const Layout = ({ children }: LayoutProps) => {
     return (unitImg as string) || (p.imageUrl as string) || undefined
   }
 
-  // Get current active category from URL (only on products page)
-  const currentCategory = location.pathname === '/products' ? searchParams.get('category') || '' : ''
+  // Current category not used
 
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (!categoriesRef.current) return
-      if (!categoriesRef.current.contains(e.target as Node)) {
-        setIsCategoriesOpen(false)
-      }
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setIsCategoriesOpen(false)
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onClickOutside)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [])
+  // Categories dropdown behaviors removed
 
   const handleHeaderSearch = (e: React.FormEvent) => {
     e.preventDefault()

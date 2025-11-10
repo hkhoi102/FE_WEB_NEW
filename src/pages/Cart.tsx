@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useCart } from '../contexts/CartContext'
 
 const Cart: React.FC = () => {
-  const { state: cartState, updateQuantity, removeFromCart, reviewCart, removePromotion, setDeliveryMethod } = useCart()
+  const { state: cartState, updateQuantity, removeFromCart, removePromotion, setDeliveryMethod } = useCart()
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {

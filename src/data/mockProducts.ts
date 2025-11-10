@@ -49,7 +49,7 @@ export const generateMockProducts = (): Product[] => {
 
   for (let i = 1; i <= 100; i++) {
     const categoryId = Math.floor(Math.random() * 6) + 1
-    const _category = categories.find(c => c.id === categoryId)!
+    // category lookup not used
     const productName = productNames[Math.floor(Math.random() * productNames.length)]
     const unit = units[Math.floor(Math.random() * units.length)]
     const description = descriptions[Math.floor(Math.random() * descriptions.length)]

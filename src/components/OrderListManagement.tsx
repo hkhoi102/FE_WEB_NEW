@@ -162,19 +162,7 @@ const OrderListManagement: React.FC = () => {
     setIsModalOpen(true)
   }
 
-  const handleEdit = (order: Order) => {
-    setEditingOrder(order)
-    setFormData({
-      customer_id: order.customer_id,
-      promotion_applied_id: order.promotion_applied_id?.toString() || '',
-      status: order.status,
-      total_amount: order.total_amount,
-      discount_amount: order.discount_amount,
-      payment_method: order.payment_method,
-      payment_status: order.payment_status
-    })
-    setIsModalOpen(true)
-  }
+  // Edit handler removed (unused on this page)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -195,11 +183,7 @@ const OrderListManagement: React.FC = () => {
     setIsModalOpen(false)
   }
 
-  const handleDelete = (id: number) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa đơn hàng này?')) {
-      setOrders(orders.filter(o => o.id !== id))
-    }
-  }
+  // Delete handler removed (unused on this page)
 
   const handleStatusChange = async (id: number, newStatus: 'PENDING' | 'COMPLETED' | 'CANCELLED' | 'PROCESSING') => {
     await OrderApi.updateStatus(id, mapUIStatusToBackend(newStatus) as any)

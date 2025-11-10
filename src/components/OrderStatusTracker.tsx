@@ -9,7 +9,7 @@ interface OrderStatusTrackerProps {
 
 const OrderStatusTracker: React.FC<OrderStatusTrackerProps> = ({
   status,
-  paymentStatus,
+  paymentStatus: _paymentStatus,
   createdAt,
   updatedAt
 }) => {
