@@ -69,7 +69,7 @@ const ProductFormWithUnitsAndPrices = ({
 
   // Price header states (only when editing)
   // Giữ state và setter vì còn dùng ở dưới (tạo header)
-  const [unitPriceHeaders, setUnitPriceHeaders] = useState<Map<number, Array<{ id: number; name: string; description?: string; timeStart?: string; timeEnd?: string }>>>(new Map())
+  const [_unitPriceHeaders, setUnitPriceHeaders] = useState<Map<number, Array<{ id: number; name: string; description?: string; timeStart?: string; timeEnd?: string }>>>(new Map())
   const [showCreateHeaderModal, setShowCreateHeaderModal] = useState(false)
   const [newHeaderData, setNewHeaderData] = useState({
     name: '',
@@ -80,7 +80,7 @@ const ProductFormWithUnitsAndPrices = ({
   const [selectedHeaderIds, setSelectedHeaderIds] = useState<Map<number, number | ''>>(new Map())
   // Price header selection moved to Price page
   // Legacy states removed from UI (handled in Price page)
-  const [selectedHeaderInfos] = useState<Map<number, { name: string; timeStart?: string; timeEnd?: string }>>(new Map())
+  const [_selectedHeaderInfos] = useState<Map<number, { name: string; timeStart?: string; timeEnd?: string }>>(new Map())
 
   // Error handling states
   const [errorMessage, setErrorMessage] = useState<string>('')
@@ -281,7 +281,7 @@ const ProductFormWithUnitsAndPrices = ({
     }
   }
 
-  const updateUnitConversionFactor = (unitId: number, conversionFactor: number) => {
+  const _updateUnitConversionFactor = (unitId: number, conversionFactor: number) => {
     setProductUnits(prev => prev.map(u =>
       u.id === unitId ? { ...u, conversionFactor } : u
     ))
@@ -328,7 +328,7 @@ const ProductFormWithUnitsAndPrices = ({
 
   // Header selection handled in Price page
   // noop
-  const handleHeaderSelection = (_unitId: number, _headerId: number) => { /* noop */ }
+  const _handleHeaderSelection = (_unitId: number, _headerId: number) => { /* noop */ }
 
   const addPriceToUnit = (unitId: number, price: number, validFrom: string, validTo: string = '') => {
     const unitSelectedHeaderId = selectedHeaderIds.get(unitId)
@@ -349,10 +349,10 @@ const ProductFormWithUnitsAndPrices = ({
   }
 
   // Price editing moved out of this modal
-  const removePriceFromUnit = (_unitId: number, _priceIndex: number) => { /* noop */ }
+  const _removePriceFromUnit = (_unitId: number, _priceIndex: number) => { /* noop */ }
 
   // Price modal moved to Price page
-  const openPriceModal = (_unitId: number) => { /* noop */ }
+  const _openPriceModal = (_unitId: number) => { /* noop */ }
 
   const closePriceModal = () => {
     setShowPriceModal(false)
@@ -415,7 +415,7 @@ const ProductFormWithUnitsAndPrices = ({
   }
 
   // Creating headers is handled in Price page
-  const openCreateHeaderModal = (_unitId?: number) => { /* noop */ }
+  const _openCreateHeaderModal = (_unitId?: number) => { /* noop */ }
 
   const closeCreateHeaderModal = () => {
     setShowCreateHeaderModal(false)

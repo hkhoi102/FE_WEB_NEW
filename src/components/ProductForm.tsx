@@ -25,8 +25,8 @@ const ProductForm = ({ product, categories, onSubmit, onCancel, isLoading = fals
   const [units, setUnits] = useState<Array<{ id: number; name: string }>>([])
   const [allUnits, setAllUnits] = useState<Array<{ id: number; name: string; isDefault?: boolean }>>([])
   const [productUnitsView, setProductUnitsView] = useState<Array<{ id: number; unitId: number; unitName: string; conversionFactor: number; isDefault: boolean }>>([])
-  const [newUnitId, setNewUnitId] = useState<number | ''>('')
-  const [newUnitCF, setNewUnitCF] = useState<number>(1)
+  const [_newUnitId, _setNewUnitId] = useState<number | ''>('')
+  const [_newUnitCF, _setNewUnitCF] = useState<number>(1)
 
   const [imagePreview, setImagePreview] = useState<string>('')
   const [imageFile, setImageFile] = useState<File | null>(null)

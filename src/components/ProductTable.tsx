@@ -78,10 +78,10 @@ const ProductTable = ({ products, categories, onEdit, onToggleUnitStatus, onView
                 <td className="px-4 py-2 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-9 w-9">
-                      {(unit?.imageUrl || product.imageUrl) ? (
+                      {(unit?.imageUrl ?? product.imageUrl ?? undefined) ? (
                         <img
                           className="h-9 w-9 rounded-lg object-cover"
-                          src={unit?.imageUrl || product.imageUrl}
+                          src={unit?.imageUrl ?? product.imageUrl ?? undefined}
                           alt={product.name}
                         />
                       ) : (

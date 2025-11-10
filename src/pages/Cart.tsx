@@ -21,9 +21,7 @@ const Cart: React.FC = () => {
     removeFromCart(id)
   }
 
-  const handleRefreshCart = () => {
-    reviewCart()
-  }
+  // refresh cart button removed from UI; call reviewCart() where needed
 
   // Use review data if available, fallback to local calculation
   const reviewData = cartState.reviewData

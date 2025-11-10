@@ -29,12 +29,12 @@ const RevenueStats: React.FC<RevenueStatsProps> = ({ stats, selectedMonth, onMon
     })
   }
 
-  const getMonthName = (date: Date) => {
-    return date.toLocaleDateString('vi-VN', {
-      month: 'long',
-      year: 'numeric'
-    })
-  }
+  // const getMonthName = (date: Date) => {
+  //   return date.toLocaleDateString('vi-VN', {
+  //     month: 'long',
+  //     year: 'numeric'
+  //   })
+  // }
 
   const handlePreviousMonth = () => {
     const newMonth = new Date(selectedMonth)

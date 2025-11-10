@@ -156,7 +156,7 @@ const ReturnedOrderDetailModal: React.FC<ReturnedOrderDetailModalProps> = ({
                   <h4 className="text-lg font-semibold text-gray-900 mb-4">Chi tiết sản phẩm trả</h4>
                   {order.returnDetails && order.returnDetails.length > 0 ? (
                     <div className="space-y-3">
-                      {order.returnDetails.map((detail, index) => (
+                      {order.returnDetails.map((detail, _index) => (
                         <div key={detail.id} className="bg-gray-50 rounded-lg p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">

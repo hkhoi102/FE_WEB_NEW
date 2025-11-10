@@ -488,7 +488,7 @@ const ProductStatsPage = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {stats?.topSellingProducts?.map((product, index) => (
+                {stats?.topSellingProducts?.map((product, _index) => (
                   <div key={product.id} className="flex items-center space-x-4">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{product.name}</p>

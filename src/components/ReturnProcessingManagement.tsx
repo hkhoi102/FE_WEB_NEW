@@ -27,7 +27,7 @@ const ReturnProcessingManagement: React.FC = () => {
   const [nameMap, setNameMap] = useState<Record<number, string>>({})
   const [unitCache, setUnitCache] = useState<Record<number, { productName?: string; unitName?: string }>>({})
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'REQUESTED' | 'APPROVED'>('ALL')
-  const [refundMap, setRefundMap] = useState<Record<number, number>>({})
+  const [_refundMap, setRefundMap] = useState<Record<number, number>>({})
   const [returnCodeMap, setReturnCodeMap] = useState<Record<number, string>>({})
   const [orderCodeMap, setOrderCodeMap] = useState<Record<number, string>>({})
 

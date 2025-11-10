@@ -12,7 +12,7 @@ const Payment: React.FC = () => {
   const paymentInfo = order?.paymentInfo || {}
   const qrLink = state?.qrLink || paymentInfo?.qrContent
   const [isMatched, setIsMatched] = useState<boolean>(false)
-  const [checking, setChecking] = useState<boolean>(false)
+  const [_checking, setChecking] = useState<boolean>(false)
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false)
   const intervalRef = useRef<number | undefined>(undefined)
   const { clearCart } = useCart()
