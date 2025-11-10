@@ -41,7 +41,7 @@ interface OrderItem {
 }
 
 const CreateOrderManagement: React.FC = () => {
-  const { user } = useAuth()
+  const { user: _user } = useAuth()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [products, setProducts] = useState<ProductUnit[]>([])
   const [promotions, setPromotions] = useState<Promotion[]>([])
@@ -237,8 +237,8 @@ const CreateOrderManagement: React.FC = () => {
     }
     const term = customerSearchTerm.trim().toLowerCase()
     if (!term) {
-      setCustomerSuggestions([])
-      setShowCustomerSuggestions(false)
+      _setCustomerSuggestions([])
+      _setShowCustomerSuggestions(false)
       return
     }
     customerSearchDebounceRef.current = window.setTimeout(() => {
@@ -248,8 +248,8 @@ const CreateOrderManagement: React.FC = () => {
         (c.email || '').toLowerCase().includes(term) ||
         (c.address || '').toLowerCase().includes(term)
       ).slice(0, 8)
-      setCustomerSuggestions(results)
-      setShowCustomerSuggestions(results.length > 0)
+      _setCustomerSuggestions(results)
+      _setShowCustomerSuggestions(results.length > 0)
     }, 300)
     return () => {
       if (customerSearchDebounceRef.current) {
