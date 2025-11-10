@@ -154,10 +154,7 @@ const AdminSidebar = ({ currentTab, onTabChange }: AdminSidebarProps) => {
     if (window.innerWidth < 1280) setIsCollapsed(true)
   }
 
-  const toggleSidebar = () => {
-    console.log('Toggle sidebar clicked, current state:', isCollapsed)
-    setIsCollapsed(!isCollapsed)
-  }
+  // Sidebar toggle button is removed; keep collapsed behavior via hover
 
   const renderMenuItem = (item: MenuItem, level: number = 0) => {
     const hasChildren = item.children && item.children.length > 0

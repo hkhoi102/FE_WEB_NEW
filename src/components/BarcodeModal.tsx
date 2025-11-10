@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Product, ProductUnit } from '@/services/productService'
-import { BarcodeService, CreateBarcodeRequest } from '@/services/barcodeService'
+import { BarcodeService } from '@/services/barcodeService'
 
 interface BarcodeModalProps {
   isOpen: boolean

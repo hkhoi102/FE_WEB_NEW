@@ -46,9 +46,9 @@ const CreateOrderManagement: React.FC = () => {
   const [products, setProducts] = useState<ProductUnit[]>([])
   const [promotions, setPromotions] = useState<Promotion[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
-  const [customerSearchTerm, setCustomerSearchTerm] = useState('')
-  const [customerSuggestions, setCustomerSuggestions] = useState<Customer[]>([])
-  const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false)
+  const [customerSearchTerm, _setCustomerSearchTerm] = useState('')
+  const [_customerSuggestions, _setCustomerSuggestions] = useState<Customer[]>([])
+  const [_showCustomerSuggestions, _setShowCustomerSuggestions] = useState(false)
   const customerSearchDebounceRef = React.useRef<number | undefined>(undefined)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null)
@@ -61,12 +61,12 @@ const CreateOrderManagement: React.FC = () => {
   const [orderPreview, setOrderPreview] = useState<any>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [currentOrder, setCurrentOrder] = useState<any>(null)
-  const [orderStatus, setOrderStatus] = useState<'PENDING' | 'CONFIRMED' | 'DELIVERING' | 'COMPLETED' | null>(null)
+  const [_orderStatus, setOrderStatus] = useState<'PENDING' | 'CONFIRMED' | 'DELIVERING' | 'COMPLETED' | null>(null)
   const [paymentInfo, setPaymentInfo] = useState<any>(null)
   const [paymentPolling, setPaymentPolling] = useState<any>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [showCompleteConfirmModal, setShowCompleteConfirmModal] = useState(false)
-  const [orderSummaryForConfirm, setOrderSummaryForConfirm] = useState<any>(null)
+  const [_showCompleteConfirmModal, setShowCompleteConfirmModal] = useState(false)
+  const [_orderSummaryForConfirm, setOrderSummaryForConfirm] = useState<any>(null)
   const [pendingCompleteOrderId, setPendingCompleteOrderId] = useState<number | null>(null)
   const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false)
   const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false)
@@ -194,20 +194,20 @@ const CreateOrderManagement: React.FC = () => {
           })
 
           if (userResponse.ok) {
-            const userData = await userResponse.json()
-            const user = userData.data ?? userData
+          const userData = await userResponse.json()
+          const _user = userData.data ?? userData
 
             // Set user's default warehouse and stock location
-            if (user.defaultWarehouseId) {
-              setUserWarehouseId(user.defaultWarehouseId)
+            if (_user.defaultWarehouseId) {
+              setUserWarehouseId(_user.defaultWarehouseId)
             }
-            if (user.defaultStockLocationId) {
-              setUserStockLocationId(user.defaultStockLocationId)
+            if (_user.defaultStockLocationId) {
+              setUserStockLocationId(_user.defaultStockLocationId)
             }
 
             console.log('✅ Loaded user defaults:', {
-              defaultWarehouseId: user.defaultWarehouseId,
-              defaultStockLocationId: user.defaultStockLocationId
+              defaultWarehouseId: _user.defaultWarehouseId,
+              defaultStockLocationId: _user.defaultStockLocationId
             })
           } else {
             // Handle backend error statuses (e.g., 400)
@@ -602,7 +602,7 @@ const CreateOrderManagement: React.FC = () => {
 
 
   // Handle barcode scanning from image file
-  const handleImageBarcodeScan = async (file: File) => {
+  const _handleImageBarcodeScan = async (file: File) => {
     try {
       setLoading(true)
       setError(null)
@@ -1365,7 +1365,7 @@ const CreateOrderManagement: React.FC = () => {
     handleCreateOrder()
   }
 
-  const handleUpdateQuantity = (productUnitId: number, newQuantity: number) => {
+  const _handleUpdateQuantity = (productUnitId: number, newQuantity: number) => {
     // Only remove if explicitly set to 0 or negative, not if input is empty
     if (newQuantity <= 0) {
       handleRemoveItem(productUnitId)
