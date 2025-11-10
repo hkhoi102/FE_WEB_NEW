@@ -281,11 +281,7 @@ const ProductFormWithUnitsAndPrices = ({
     }
   }
 
-  const _updateUnitConversionFactor = (unitId: number, conversionFactor: number) => {
-    setProductUnits(prev => prev.map(u =>
-      u.id === unitId ? { ...u, conversionFactor } : u
-    ))
-  }
+  // updateUnitConversionFactor removed (unused)
 
   const updateUnitBarcode = (unitId: number, barcodeCode: string, barcodeType: string) => {
     setProductUnits(prev => prev.map(u =>
@@ -328,7 +324,7 @@ const ProductFormWithUnitsAndPrices = ({
 
   // Header selection handled in Price page
   // noop
-  const _handleHeaderSelection = (_unitId: number, _headerId: number) => { /* noop */ }
+  // handleHeaderSelection removed (unused)
 
   const addPriceToUnit = (unitId: number, price: number, validFrom: string, validTo: string = '') => {
     const unitSelectedHeaderId = selectedHeaderIds.get(unitId)
@@ -349,10 +345,10 @@ const ProductFormWithUnitsAndPrices = ({
   }
 
   // Price editing moved out of this modal
-  const _removePriceFromUnit = (_unitId: number, _priceIndex: number) => { /* noop */ }
+  // removePriceFromUnit removed (unused)
 
   // Price modal moved to Price page
-  const _openPriceModal = (_unitId: number) => { /* noop */ }
+  // openPriceModal removed (unused)
 
   const closePriceModal = () => {
     setShowPriceModal(false)
@@ -415,7 +411,7 @@ const ProductFormWithUnitsAndPrices = ({
   }
 
   // Creating headers is handled in Price page
-  const _openCreateHeaderModal = (_unitId?: number) => { /* noop */ }
+  // openCreateHeaderModal removed (unused)
 
   const closeCreateHeaderModal = () => {
     setShowCreateHeaderModal(false)

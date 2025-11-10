@@ -1657,7 +1657,13 @@ const CreateOrderManagement: React.FC = () => {
                             type="number"
                             min="1"
                             value={quantityInputs[item.productUnitId] !== undefined ? quantityInputs[item.productUnitId] : item.quantity}
-                            onChange={(e) => handleQuantityInputChange(item.productUnitId, e.target.value)}
+                            onChange={(e) => {
+                              const value = e.target.value
+                              setQuantityInputs(prev => ({
+                                ...prev,
+                                [item.productUnitId]: value
+                              }))
+                            }}
                             onBlur={(e) => {
                               // When user finishes typing, ensure we have a valid value
                               const value = e.target.value

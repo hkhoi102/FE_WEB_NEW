@@ -22,7 +22,7 @@ const OrderListManagement: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [editingOrder, setEditingOrder] = useState<Order | null>(null)
+  const [editingOrder] = useState<Order | null>(null)
   const [activeDetailTab, setActiveDetailTab] = useState<'info' | 'products'>('info')
   const [selectedOrders, setSelectedOrders] = useState<number[]>([])
   const [bulkStatus, setBulkStatus] = useState<'PENDING' | 'COMPLETED' | 'CANCELLED' | 'PROCESSING'>('PENDING')

@@ -12,7 +12,7 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [_searchParams] = useSearchParams()
   const { state: cartState } = useCart()
   const { user, isAuthenticated, logout } = useUserAuth()
   // Categories dropdown removed
