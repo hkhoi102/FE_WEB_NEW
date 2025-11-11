@@ -67,7 +67,6 @@ const CreateOrderManagement: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [_showCompleteConfirmModal, setShowCompleteConfirmModal] = useState(false)
   const [_orderSummaryForConfirm, setOrderSummaryForConfirm] = useState<any>(null)
-  const [pendingCompleteOrderId, setPendingCompleteOrderId] = useState<number | null>(null)
   const [showPaymentSuccessModal, setShowPaymentSuccessModal] = useState(false)
   const [showPaymentMethodModal, setShowPaymentMethodModal] = useState(false)
   const [showPrintModal, setShowPrintModal] = useState(false)
@@ -1141,9 +1140,7 @@ const CreateOrderManagement: React.FC = () => {
 
             // Cập nhật payment status
             await updatePaymentStatus(orderId)
-
-            // Đợi người dùng đóng modal thành công rồi mới hiển thị xác nhận hoàn thành
-            setPendingCompleteOrderId(orderId)
+            await handleCashPaymentWorkflow(orderId)
           }
         }
       } catch (error) {
@@ -1254,7 +1251,6 @@ const CreateOrderManagement: React.FC = () => {
     setSuccess(null)
     setShowCompleteConfirmModal(false)
     setOrderSummaryForConfirm(null)
-    setPendingCompleteOrderId(null)
     setShowPaymentSuccessModal(false)
     setShowPaymentMethodModal(false)
     setBarcodeInput('')
@@ -2060,31 +2056,8 @@ const CreateOrderManagement: React.FC = () => {
                 💳 Thanh toán chuyển khoản - Đơn hàng {currentOrder?.orderCode ? `#${currentOrder.orderCode}` : (currentOrder?.id ? `#${currentOrder.id}` : '')}
               </h3>
               <button
-                onClick={async () => {
+                onClick={() => {
                   setShowPaymentModal(false)
-                  if (pendingCompleteOrderId) {
-                    try {
-                      const detail = await OrderApi.getById(pendingCompleteOrderId).catch(() => null)
-                      let summary: any = detail?.data || detail || null
-                      if (summary?.orderDetails && Array.isArray(summary.orderDetails)) {
-                        const enriched = await Promise.all((summary.orderDetails || []).map(async (d: any) => {
-                          const oi = orderItems.find(oi => oi.productUnitId === d.productUnitId)
-                          if (oi) return { ...d, productName: oi.productName, unitName: oi.unitName }
-                          try {
-                            const unitInfo = await ProductService.getProductUnitById(d.productUnitId)
-                            return { ...d, productName: unitInfo?.productName || `PU#${d.productUnitId}`, unitName: unitInfo?.unitName || 'Đơn vị' }
-                          } catch {
-                            return { ...d, productName: `PU#${d.productUnitId}`, unitName: 'Đơn vị' }
-                          }
-                        }))
-                        summary = { ...summary, orderDetails: enriched }
-                      }
-                      setCurrentOrder(summary)
-                      setOrderSummaryForConfirm(summary)
-                      setShowCompleteConfirmModal(true)
-                    } catch {}
-                    setPendingCompleteOrderId(null)
-                  }
                 }}
                 className="text-gray-400 hover:text-gray-600"
               >
