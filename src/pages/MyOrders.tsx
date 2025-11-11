@@ -42,6 +42,7 @@ export default function MyOrders() {
   const [unitNames, setUnitNames] = useState<Record<number, { productName?: string; unitName?: string }>>({})
   const [returnOpen, setReturnOpen] = useState<boolean>(false)
   const [returnReason, setReturnReason] = useState<string>('')
+  const [returnReasonCustom, setReturnReasonCustom] = useState<string>('')
   const [returnQuantities, setReturnQuantities] = useState<Record<number, number>>({})
   const [returnSubmitting, setReturnSubmitting] = useState<boolean>(false)
   const [returnError, setReturnError] = useState<string | null>(null)
@@ -128,6 +129,7 @@ export default function MyOrders() {
     setOrderDetail(null)
     setReturnOpen(false)
     setReturnReason('')
+    setReturnReasonCustom('')
     setReturnQuantities({})
     setReturnError(null)
   }
@@ -379,21 +381,22 @@ export default function MyOrders() {
                 >Hủy đơn</button>
               )}
 
-              {/* Return buttons only for COMPLETED */}
-              {((orderDetail.canReturn === true) || (orderDetail.status === 'COMPLETED')) && (
+              {/* Return buttons - Ẩn chức năng trả hàng cho khách hàng */}
+              {/* {((orderDetail.canReturn === true) || (orderDetail.status === 'COMPLETED')) && (
                 <button
-                  className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                  className="px-4 py-2 text-sm bg-white border border-red-300 text-red-700 rounded-md hover:bg-red-50"
                   onClick={() => {
-                    // Pre-fill quantities as 0
+                    // Pre-fill quantities với số lượng gốc (trả hết)
                     const init: Record<number, number> = {}
-                    for (const d of (orderDetail.orderDetails ?? [])) init[d.id] = 0
+                    for (const d of (orderDetail.orderDetails ?? [])) init[d.id] = d.quantity
                     setReturnQuantities(init)
-                    setReturnReason('')
+                    setReturnReason('Yêu cầu khách hàng')
+                    setReturnReasonCustom('')
                     setReturnError(null)
                     setReturnOpen(true)
                   }}
                 >Yêu cầu trả hàng</button>
-              )}
+              )} */}
             </div>
           </div>
         ) : (
@@ -407,8 +410,15 @@ export default function MyOrders() {
           <div className="text-gray-600">Không có dữ liệu đơn hàng.</div>
         ) : (
           <div className="space-y-4">
-            <div className="text-sm">
-              Chọn sản phẩm và số lượng muốn trả.
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <p className="text-sm text-blue-800">
+                  Tất cả sản phẩm sẽ được trả hết. Vui lòng chọn lý do trả hàng và gửi yêu cầu.
+                </p>
+              </div>
             </div>
 
             <div className="border rounded-md overflow-hidden">
@@ -416,8 +426,8 @@ export default function MyOrders() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sản phẩm</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đã mua</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trả</th>
+                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Đã mua</th>
+                    <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng trả</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -430,19 +440,22 @@ export default function MyOrders() {
                           <span>#{d.productUnitId}</span>
                         )}
                       </td>
-                      <td className="px-4 py-2 text-sm text-gray-700">{d.quantity}</td>
-                      <td className="px-4 py-2 text-sm text-gray-700">
+                      <td className="px-4 py-2 text-sm text-gray-700 text-center">{d.quantity}</td>
+                      <td className="px-4 py-2 text-sm text-gray-700 text-center">
                         <input
                           type="number"
                           min={0}
                           max={d.quantity}
-                          value={returnQuantities[d.id] ?? 0}
+                          value={returnQuantities[d.id] ?? d.quantity}
                           onChange={(e) => {
                             const val = Math.max(0, Math.min(d.quantity, Number(e.target.value)))
                             setReturnQuantities((prev) => ({ ...prev, [d.id]: val }))
                           }}
-                          className="w-24 border rounded px-2 py-1"
+                          className="w-24 border rounded px-2 py-1 bg-gray-100"
+                          readOnly
+                          disabled
                         />
+                        <span className="text-xs text-gray-500 ml-2">(Tự động trả hết)</span>
                       </td>
                     </tr>
                   ))}
@@ -451,51 +464,118 @@ export default function MyOrders() {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Lý do trả hàng (tuỳ chọn)</label>
-              <textarea
+              <label className="block text-sm font-medium text-gray-700 mb-1">Lý do trả hàng <span className="text-red-500">*</span></label>
+              <select
                 value={returnReason}
-                onChange={(e) => setReturnReason(e.target.value)}
-                className="w-full border rounded-md px-3 py-2 text-sm"
-                rows={3}
-                placeholder="Nhập lý do trả hàng"
-              />
+                onChange={(e) => {
+                  setReturnReason(e.target.value)
+                  if (e.target.value !== 'Khác') {
+                    setReturnReasonCustom('')
+                  }
+                }}
+                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Chọn lý do trả hàng</option>
+                <option value="Sản phẩm lỗi">Sản phẩm lỗi</option>
+                <option value="Sai sản phẩm">Sai sản phẩm</option>
+                <option value="Sản phẩm hỏng">Sản phẩm hỏng</option>
+                <option value="Không đúng mô tả">Không đúng mô tả</option>
+                <option value="Yêu cầu khách hàng">Yêu cầu khách hàng</option>
+                <option value="Khác">Khác</option>
+              </select>
+              {returnReason === 'Khác' && (
+                <textarea
+                  value={returnReasonCustom}
+                  onChange={(e) => setReturnReasonCustom(e.target.value)}
+                  className="w-full border rounded-md px-3 py-2 text-sm mt-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                  placeholder="Nhập lý do trả hàng chi tiết"
+                />
+              )}
             </div>
 
-            {returnError && <div className="text-sm text-red-600">{returnError}</div>}
+            {returnError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <p className="text-sm text-red-800">{returnError}</p>
+                </div>
+              </div>
+            )}
 
-            <div className="flex justify-end gap-2">
-              <button className="px-4 py-2 text-sm border rounded-md" onClick={() => setReturnOpen(false)}>Hủy</button>
+            <div className="flex justify-end gap-2 pt-2 border-t">
               <button
-                className="px-4 py-2 text-sm bg-primary-600 text-white rounded-md disabled:opacity-50"
-                disabled={returnSubmitting || Object.values(returnQuantities).every((q) => !q)}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                onClick={() => setReturnOpen(false)}
+              >
+                Hủy
+              </button>
+              <button
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                disabled={returnSubmitting || !returnReason.trim() || (returnReason === 'Khác' && !returnReasonCustom.trim()) || Object.values(returnQuantities).every((q) => !q)}
                 onClick={async () => {
                   try {
                     setReturnSubmitting(true)
                     setReturnError(null)
-                    if (!selectedOrderId) throw new Error('Thiếu orderId')
+
+                    // Validation
+                    if (!selectedOrderId) {
+                      setReturnError('Thiếu thông tin đơn hàng')
+                      return
+                    }
+
+                    if (!returnReason.trim()) {
+                      setReturnError('Vui lòng chọn lý do trả hàng')
+                      return
+                    }
+
+                    if (returnReason === 'Khác' && !returnReasonCustom.trim()) {
+                      setReturnError('Vui lòng nhập lý do trả hàng chi tiết')
+                      return
+                    }
+
                     const details = Object.entries(returnQuantities)
                       .map(([orderDetailId, quantity]) => ({ orderDetailId: Number(orderDetailId), quantity: Number(quantity) }))
                       .filter((d) => d.quantity > 0)
-                    const payload = { orderId: selectedOrderId, reason: returnReason || undefined, returnDetails: details }
+
+                    if (details.length === 0) {
+                      setReturnError('Vui lòng chọn ít nhất một sản phẩm để trả')
+                      return
+                    }
+
+                    const finalReason = returnReason === 'Khác' ? returnReasonCustom.trim() : returnReason.trim()
+
+                    const payload = {
+                      orderId: selectedOrderId,
+                      reason: finalReason,
+                      returnDetails: details
+                    }
+
                     const created = await OrderApiNs.createReturn(payload as any)
                     setReturnOpen(false)
+
                     if (created?.orderId) {
                       await syncOrder(created.orderId)
                       await refreshOrders()
                     }
-                    setNoticeMessage('Đã gửi yêu cầu trả hàng thành công')
+
+                    setNoticeMessage('Đã gửi yêu cầu trả hàng thành công. Yêu cầu của bạn đang được xử lý.')
                     setNoticeOpen(true)
                   } catch (e: any) {
                     const msg = String(e?.message || 'Gửi yêu cầu trả hàng thất bại')
-                    // Đóng modal trả hàng và hiện modal thông báo lỗi
-                    setReturnOpen(false)
-                    setNoticeMessage(msg)
-                    setNoticeOpen(true)
+                    setReturnError(msg)
                   } finally {
                     setReturnSubmitting(false)
                   }
                 }}
-              >Gửi yêu cầu</button>
+              >
+                {returnSubmitting && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                {returnSubmitting ? 'Đang gửi...' : 'Gửi yêu cầu trả hàng'}
+              </button>
             </div>
           </div>
         )}

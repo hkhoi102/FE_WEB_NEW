@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { CategoryCard, ProductCard, SectionHeader, PromoCard, TestimonialCard } from '@/components'
+import { CategoryCard, ProductCard, SectionHeader, PromoCard, TestimonialCard, PageTransition } from '@/components'
 import { CategoryService, type Category } from '@/services/categoryService'
 import { ProductService, type Product } from '@/services/productService'
 import { ReviewService, type ReviewItem } from '@/services/reviewService'
@@ -76,33 +76,52 @@ const Home = () => {
     return categoryImageMap[category.name] || freshFruit
   }
   return (
-    <div className="space-y-16">
+    <PageTransition>
+      <div className="space-y-16">
       {/* Hero */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 bg-primary-600 text-white rounded-2xl overflow-hidden relative">
+        <div className="md:col-span-2 bg-primary-600 text-white rounded-2xl overflow-hidden relative group cursor-pointer transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
           {/* Right-side banner image */}
-          <img src={bannerImg} alt="Fresh & Healthy" className="hidden md:block absolute inset-y-0 right-0 h-full w-1/2 object-cover" />
-          <div className="relative p-10 md:p-12 max-w-xl">
+          <div className="hidden md:block absolute inset-y-0 right-0 h-full w-1/2 overflow-hidden">
+            <img
+              src={bannerImg}
+              alt="Fresh & Healthy"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+            />
+          </div>
+          <div className="relative p-10 md:p-12 max-w-xl z-10 transition-all duration-300 group-hover:translate-x-2">
             <p className="uppercase tracking-wide text-primary-100 text-sm mb-2">Chào mừng đến với Siêu Thị Thông Minh</p>
             <h1 className="text-3xl md:text-5xl font-bold leading-tight">Thực phẩm hữu cơ tươi và tốt cho sức khỏe</h1>
             <p className="mt-4 text-primary-100 max-w-md">Giảm đến 30% OFF. Miễn phí vận chuyển cho đơn hàng đầu tiên.</p>
-            <Link to="/products" className="inline-block mt-6 bg-white text-primary-700 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100">Mua ngay</Link>
+            <Link to="/products" className="inline-block mt-6 bg-white text-primary-700 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 transition-all duration-300 group-hover:scale-105">Mua ngay</Link>
           </div>
         </div>
 
         <div className="grid gap-6">
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative">
-            <img src={specialProductImg} alt="Sản phẩm đặc biệt" className="w-full h-48 object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
-              <h3 className="font-semibold text-white text-lg">Sản phẩm đặc biệt</h3>
-              <p className="text-sm text-white/90">Ưu đãi trong tháng</p>
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative group cursor-pointer transition-all duration-500 hover:shadow-xl hover:scale-105">
+            <div className="overflow-hidden h-48">
+              <img
+                src={specialProductImg}
+                alt="Sản phẩm đặc biệt"
+                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 transition-all duration-300 group-hover:from-black/70">
+              <h3 className="font-semibold text-white text-lg transition-transform duration-300 group-hover:translate-y-[-4px]">Sản phẩm đặc biệt</h3>
+              <p className="text-sm text-white/90 transition-transform duration-300 group-hover:translate-y-[-4px]">Ưu đãi trong tháng</p>
             </div>
           </div>
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative">
-            <img src={summerSaleImg} alt="Khuyến mãi hè" className="w-full h-48 object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
-              <h3 className="font-semibold text-white text-lg">Khuyến mãi hè</h3>
-              <p className="text-sm text-white/90">Giảm đến 75%</p>
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative group cursor-pointer transition-all duration-500 hover:shadow-xl hover:scale-105">
+            <div className="overflow-hidden h-48">
+              <img
+                src={summerSaleImg}
+                alt="Khuyến mãi hè"
+                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 transition-all duration-300 group-hover:from-black/70">
+              <h3 className="font-semibold text-white text-lg transition-transform duration-300 group-hover:translate-y-[-4px]">Khuyến mãi hè</h3>
+              <p className="text-sm text-white/90 transition-transform duration-300 group-hover:translate-y-[-4px]">Giảm đến 75%</p>
             </div>
           </div>
         </div>
@@ -229,12 +248,13 @@ const Home = () => {
 
       {/* Banner */}
       <section>
-        <div className="rounded-2xl bg-gray-900 text-white p-10 flex items-center justify-between">
-          <div>
-            <h3 className="text-2xl md:text-3xl font-bold">Tiết kiệm 37% trên mỗi đơn hàng</h3>
-            <p className="text-gray-300 mt-2">Miễn phí vận chuyển cho đơn hàng đầu tiên.</p>
+        <div className="rounded-2xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white p-10 flex items-center justify-between group cursor-pointer transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 via-transparent to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="relative z-10 transition-all duration-300 group-hover:translate-x-2">
+            <h3 className="text-2xl md:text-3xl font-bold transition-all duration-300 group-hover:text-green-300">Tiết kiệm 37% trên mỗi đơn hàng</h3>
+            <p className="text-gray-300 mt-2 transition-all duration-300 group-hover:text-gray-100">Miễn phí vận chuyển cho đơn hàng đầu tiên.</p>
           </div>
-          <Link to="/products" className="bg-white text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100">Mua ngay</Link>
+          <Link to="/products" className="bg-white text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg relative z-10">Mua ngay</Link>
         </div>
       </section>
 
@@ -339,7 +359,8 @@ const Home = () => {
           )
         })()}
       </section>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
 

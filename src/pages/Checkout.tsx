@@ -22,7 +22,7 @@ const Checkout: React.FC = () => {
     saveInfo: false
   })
 
-  const [paymentMethod, setPaymentMethod] = useState('cod')
+  const [paymentMethod, setPaymentMethod] = useState('qrcode')
   const [orderNotes, setOrderNotes] = useState('')
   const [notification, setNotification] = useState<{
     isOpen: boolean
@@ -565,7 +565,8 @@ const Checkout: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Phương thức thanh toán</h3>
 
                 <div className="space-y-4">
-                  <div className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                  {/* COD option đã bị ẩn - chỉ cho phép thanh toán chuyển khoản */}
+                  {/* <div className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                     <input
                       type="radio"
                       id="cod"
@@ -588,9 +589,9 @@ const Checkout: React.FC = () => {
                         </div>
                       </div>
                     </label>
-                  </div>
+                  </div> */}
 
-                  <div className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                  <div className="flex items-center p-4 border-2 border-blue-200 rounded-lg bg-blue-50 cursor-pointer transition-colors">
                     <input
                       type="radio"
                       id="qrcode"
@@ -599,6 +600,7 @@ const Checkout: React.FC = () => {
                       checked={paymentMethod === 'qrcode'}
                       onChange={(e) => setPaymentMethod(e.target.value)}
                       className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                      disabled
                     />
                     <label htmlFor="qrcode" className="ml-3 flex items-center w-full">
                       <div className="flex items-center">
@@ -608,7 +610,7 @@ const Checkout: React.FC = () => {
                           </svg>
                         </div>
                         <div>
-                          <div className="text-base font-medium text-gray-900">Thanh toán qua QR code</div>
+                          <div className="text-base font-medium text-gray-900">Thanh toán chuyển khoản</div>
                           <div className="text-sm text-gray-500">Quét mã QR để thanh toán online</div>
                         </div>
                       </div>

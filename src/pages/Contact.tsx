@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { PageTransition } from '@/components'
 
 const Contact = () => {
   const mapEmbedUrl = (import.meta as any).env?.VITE_MAPS_EMBED_URL || 'https://www.google.com/maps?output=embed&hl=vi&q=Nguy%E1%BB%85n%20V%C4%83n%20B%E1%BA%A3o%2F12%20%C4%90.%20H%E1%BA%A1nh%20Th%C3%B4ng%2C%20Ph%C6%B0%E1%BB%9Dng%2C%20G%C3%B2%20V%E1%BA%A5p%2C%20Th%C3%A0nh%20ph%E1%BB%91%20H%E1%BB%93%20Ch%C3%AD%20Minh%20700000%2C%20Vi%E1%BB%87t%20Nam'
@@ -23,7 +24,7 @@ const Contact = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-    
+
     // Simulate API call
     try {
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -68,7 +69,8 @@ const Contact = () => {
   ]
 
   return (
-    <div className="space-y-16">
+    <PageTransition>
+      <div className="space-y-16">
       {/* Hero Section */}
       <section className="text-center py-16">
         <h1 className="text-4xl font-bold text-gray-900 mb-6">
@@ -221,11 +223,11 @@ const Contact = () => {
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
-              {[ 
-                { t: 'Giao nhanh 2H', d: 'Áp dụng nội thành' }, 
-                { t: 'Thẻ thành viên', d: 'Tích điểm nhận ưu đãi' }, 
-                { t: 'Thanh toán đa dạng', d: 'Tiền mặt, thẻ, QR' }, 
-                { t: 'Hỗ trợ 24/7', d: 'Giải đáp mọi thắc mắc' } 
+              {[
+                { t: 'Giao nhanh 2H', d: 'Áp dụng nội thành' },
+                { t: 'Thẻ thành viên', d: 'Tích điểm nhận ưu đãi' },
+                { t: 'Thanh toán đa dạng', d: 'Tiền mặt, thẻ, QR' },
+                { t: 'Hỗ trợ 24/7', d: 'Giải đáp mọi thắc mắc' }
               ].map((s) => (
                 <div key={s.t} className="p-4 rounded-lg border border-gray-200 bg-white">
                   <p className="text-sm font-semibold text-gray-900">{s.t}</p>
@@ -253,7 +255,8 @@ const Contact = () => {
           />
         </div>
       </section>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
 

@@ -188,19 +188,19 @@ const ChatWidget = () => {
       {/* Floating button */}
       <button
         onClick={() => setIsOpen((v) => !v)}
-        className="fixed bottom-6 right-6 z-40 rounded-full shadow-lg bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white w-14 h-14 flex items-center justify-center transition-all duration-200 hover:scale-110"
-        aria-label="Mở chat hỗ trợ AI"
+        className="fixed bottom-6 right-6 z-40 rounded-full shadow-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white w-16 h-16 flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-2xl"
+        aria-label="Mở chat hỗ trợ"
       >
         {isOpen ? (
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         ) : (
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              d="M8 10h8M8 14h5M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4-.8L3 20l.8-4A8.9 8.9 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
         )}
@@ -208,33 +208,40 @@ const ChatWidget = () => {
 
       {/* Chat window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-40 w-[500px] max-w-[95vw] bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col h-[600px] max-h-[90vh]">
+        <div className="fixed bottom-24 right-6 z-40 w-[500px] max-w-[95vw] bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col h-[600px] max-h-[90vh] animate-slideUp">
           {/* Header */}
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white p-5 flex-shrink-0">
+          <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 text-white p-5 flex-shrink-0">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  🤖 Smart Retail AI Assistant
-                </h3>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></span>
-                  <span className="text-xs text-indigo-100">Đang hoạt động</span>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg flex items-center gap-2">
+                    Hỗ trợ khách hàng
+                  </h3>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="w-2.5 h-2.5 bg-green-300 rounded-full animate-pulse"></span>
+                    <span className="text-xs text-green-50">Đang hoạt động</span>
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={clearChat}
-                  className="opacity-90 hover:opacity-100 text-xs px-3 py-1.5 bg-white/20 rounded-lg transition-colors"
+                  className="opacity-90 hover:opacity-100 text-xs px-3 py-1.5 bg-white/20 rounded-lg transition-colors hover:bg-white/30"
                   title="Xóa lịch sử"
                 >
                   Xóa
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="opacity-90 hover:opacity-100"
+                  className="opacity-90 hover:opacity-100 p-1.5 hover:bg-white/20 rounded-lg transition-colors"
                   aria-label="Đóng chat"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -249,13 +256,9 @@ const ChatWidget = () => {
           >
             {!hasMessages && (
               <div className="text-center py-10 text-gray-600">
-                <h2 className="text-2xl font-semibold mb-2 text-gray-800">👋 Chào mừng!</h2>
+                <h2 className="text-2xl font-semibold mb-2 text-gray-800">Chào mừng!</h2>
                 <p className="text-sm mb-4">Tôi là trợ lý AI cho hệ thống siêu thị. Bạn có thể hỏi tôi về:</p>
-                <ul className="text-sm space-y-1 text-left max-w-xs mx-auto">
-                  <li>• Sản phẩm, giá cả, tồn kho</li>
-                  <li>• Thống kê doanh số, đơn hàng</li>
-                  <li>• Chính sách và hướng dẫn</li>
-                </ul>
+
               </div>
             )}
 
@@ -268,7 +271,7 @@ const ChatWidget = () => {
                   <div
                     className={`px-4 py-3 rounded-2xl ${
                       m.role === 'user'
-                        ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-br-sm'
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-br-sm shadow-md'
                         : m.isQuotaError
                           ? 'bg-orange-50 border-2 border-orange-300 text-orange-900 rounded-bl-sm'
                           : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm'
@@ -310,9 +313,9 @@ const ChatWidget = () => {
               <div className="flex justify-start animate-fadeIn">
                 <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
                   <div className="flex gap-1.5">
-                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                    <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                    <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                    <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                    <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                   </div>
                 </div>
               </div>
@@ -327,11 +330,11 @@ const ChatWidget = () => {
           </div>
 
           {/* Input */}
-          <div className="p-4 bg-white border-t border-gray-200 flex-shrink-0">
+          <div className="p-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
             <div className="flex gap-2 items-end">
               <textarea
                 ref={inputRef}
-                className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-indigo-500 transition-colors max-h-[120px]"
+                className="flex-1 border-2 border-gray-300 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all max-h-[120px] bg-white"
                 placeholder="Nhập câu hỏi của bạn..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -340,11 +343,26 @@ const ChatWidget = () => {
                 rows={1}
               />
               <button
-                className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white rounded-xl font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none min-w-[80px]"
+                className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none min-w-[80px] flex items-center justify-center gap-2"
                 onClick={() => sendMessage()}
                 disabled={isSending || !input.trim()}
               >
-                {isSending ? 'Đang gửi...' : 'Gửi'}
+                {isSending ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Đang gửi...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Gửi</span>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -362,21 +380,35 @@ const ChatWidget = () => {
             transform: translateY(0);
           }
         }
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-in;
+        }
+        .animate-slideUp {
+          animation: slideUp 0.3s ease-out;
         }
         .scrollbar-thin::-webkit-scrollbar {
           width: 6px;
         }
         .scrollbar-thin::-webkit-scrollbar-track {
           background: #f1f1f1;
+          border-radius: 3px;
         }
         .scrollbar-thin::-webkit-scrollbar-thumb {
-          background: #c1c1c1;
+          background: #9ca3af;
           border-radius: 3px;
         }
         .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-          background: #a8a8a8;
+          background: #6b7280;
         }
       `}</style>
     </>

@@ -1,5 +1,7 @@
 import supermarketImg from '@/images/Gemini_Generated_Image_86008r86008r8600.png'
 import giaoHangImg from '@/images/giao_hang.png'
+import { PageTransition } from '@/components'
+
 function About() {
   const mapEmbedUrl = (import.meta as any).env?.VITE_MAPS_EMBED_URL || 'https://www.google.com/maps?output=embed&hl=vi&q=Nguy%E1%BB%85n%20V%C4%83n%20B%E1%BA%A3o%2F12%20%C4%90.%20H%E1%BA%A1nh%20Th%C3%B4ng%2C%20Ph%C6%B0%E1%BB%9Dng%2C%20G%C3%B2%20V%E1%BA%A5p%2C%20Th%C3%A0nh%20ph%E1%BB%91%20H%E1%BB%93%20Ch%C3%AD%20Minh%20700000%2C%20Vi%E1%BB%87t%20Nam'
   const highlights = [
@@ -24,7 +26,8 @@ function About() {
   ]
 
   return (
-    <div className="space-y-20">
+    <PageTransition>
+      <div className="space-y-20">
       {/* Hero: About Supermarket */}
       <section className="grid md:grid-cols-2 gap-10 items-center">
         <div className="space-y-5">
@@ -157,7 +160,8 @@ function About() {
           </div>
         ))}
       </section>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
 

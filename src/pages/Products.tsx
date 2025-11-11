@@ -4,6 +4,7 @@ import CategoryMenu from '../components/CategoryMenu'
 import ProductCard from '../components/ProductCard'
 import Pagination from '../components/Pagination'
 import { ProductService } from '../services/productService'
+import { PageTransition } from '../components'
 
 const Products: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -84,17 +85,17 @@ const Products: React.FC = () => {
       if (sortBy === 'name') {
         const nameA = (a.name || '').toLowerCase()
         const nameB = (b.name || '').toLowerCase()
-        return sortOrder === 'asc' 
+        return sortOrder === 'asc'
           ? nameA.localeCompare(nameB, 'vi')
           : nameB.localeCompare(nameA, 'vi')
       }
-      
+
       if (sortBy === 'price') {
         const priceA = getProductPrice(a)
         const priceB = getProductPrice(b)
         return sortOrder === 'asc' ? priceA - priceB : priceB - priceA
       }
-      
+
       return 0
     })
   }
@@ -109,7 +110,7 @@ const Products: React.FC = () => {
         // Dùng endpoint search khi có từ khóa để đảm bảo độ chính xác
         // Load all results for client-side sorting and expansion
         const results = await ProductService.searchProducts(searchTerm, 1000)
-        
+
         // Expand products to units first
         const expandedResults = results.flatMap((product: any) => {
           if (product.productUnits && product.productUnits.length > 0) {
@@ -122,13 +123,13 @@ const Products: React.FC = () => {
           }
           return [product]
         })
-        
+
         // Apply price range filter
         const filteredResults = filterByPriceRange(expandedResults)
-        
+
         // Apply sorting to filtered products
         const sortedResults = sortProducts(filteredResults)
-        
+
         // Pagination after sorting
         const start = (currentPage - 1) * pageSize
         const pageItems = sortedResults.slice(start, start + pageSize)
@@ -150,7 +151,7 @@ const Products: React.FC = () => {
           const allProducts: any[] = []
           let hasMore = true
           let page = 0
-          
+
           while (hasMore) {
             const response = await ProductService.getProducts(
               page + 1,
@@ -158,16 +159,16 @@ const Products: React.FC = () => {
               undefined,
               selectedCategory?.id
             )
-            
+
             allProducts.push(...response.products)
-            
+
             if (response.products.length < 100 || page >= response.pagination.total_pages - 1) {
               hasMore = false
             } else {
               page++
             }
           }
-          
+
           // Expand, filter, and sort all products
           const expandedResults = allProducts.flatMap((product: any) => {
             if (product.productUnits && product.productUnits.length > 0) {
@@ -180,15 +181,15 @@ const Products: React.FC = () => {
             }
             return [product]
           })
-          
+
           const filteredResults = filterByPriceRange(expandedResults)
           const sortedResults = sortProducts(filteredResults)
-          
+
           // Pagination after filtering
           const start = (currentPage - 1) * pageSize
           const pageItems = sortedResults.slice(start, start + pageSize)
           const totalPages = Math.max(1, Math.ceil(sortedResults.length / pageSize))
-          
+
           setProductsData({
             products: pageItems,
             totalCount: sortedResults.length,
@@ -279,7 +280,8 @@ const Products: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <PageTransition>
+      <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -352,7 +354,7 @@ const Products: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  
+
                   {searchTerm && (
                     <span className="text-sm text-primary-600 bg-primary-50 px-2 py-1 rounded">
                       Tìm kiếm: "{searchTerm}"
@@ -478,7 +480,7 @@ const Products: React.FC = () => {
             {/* Pagination */}
             {!loading && !error && productsData.totalCount > 0 && (
               <div className="mt-8 flex flex-col items-center gap-4">
-                
+
                 <Pagination
                   pagination={{
                     current_page: productsData.currentPage,
@@ -493,7 +495,8 @@ const Products: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
 

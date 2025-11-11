@@ -96,8 +96,8 @@ const ReturnOrderPage: React.FC = () => {
           subtotal: od.subtotal ?? (od.unitPrice * od.quantity),
           productName: unitMap[od.productUnitId]?.productName,
           unitName: unitMap[od.productUnitId]?.unitName,
-          returnQuantity: 0,
-          returnReason: ''
+          returnQuantity: od.quantity, // Tự động trả hết số lượng gốc
+          returnReason: 'Yêu cầu khách hàng' // Tự động điền lý do mặc định
         }))
 
         setOrderDetails(returnItems)
@@ -126,10 +126,25 @@ const ReturnOrderPage: React.FC = () => {
       setSubmitting(true)
       setError(null)
 
+      // Kiểm tra tất cả sản phẩm đều có lý do trả hàng
+      const itemsWithoutReason = orderDetails.filter(item => !item.returnReason.trim())
+      if (itemsWithoutReason.length > 0) {
+        setError('Vui lòng chọn lý do trả hàng cho tất cả sản phẩm')
+        return
+      }
+
+      // Tất cả sản phẩm sẽ được trả hết
       const validItems = orderDetails.filter(item => item.returnQuantity > 0 && item.returnReason.trim())
 
       if (validItems.length === 0) {
-        setError('Vui lòng chọn ít nhất một sản phẩm để trả và nhập lý do')
+        setError('Không có sản phẩm nào để trả')
+        return
+      }
+
+      // Đảm bảo tất cả sản phẩm đều được trả hết
+      const partialReturns = orderDetails.filter(item => item.returnQuantity > 0 && item.returnQuantity < item.quantity)
+      if (partialReturns.length > 0) {
+        setError('Tất cả sản phẩm phải được trả hết, không cho phép trả một phần')
         return
       }
 
@@ -170,6 +185,9 @@ const ReturnOrderPage: React.FC = () => {
 
       // Bước 3: Hoàn thành đơn trả hàng (chuyển trạng thái thành COMPLETED)
       await OrderApi.completeReturn(returnOrder.id)
+
+      // Bước 4: Cập nhật trạng thái đơn hàng thành CANCELLED (đã hủy)
+      await OrderApi.updateStatus(order.id, 'CANCELLED', 'Đơn hàng đã được trả hết')
 
       // Lấy dữ liệu đơn hàng đã được cập nhật từ BE
       const updatedOrderResponse = await OrderApi.getById(order.id)
@@ -445,7 +463,7 @@ const ReturnOrderPage: React.FC = () => {
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">Danh sách sản phẩm</h2>
-                    <p className="text-sm text-gray-600 mt-1">Chọn sản phẩm và số lượng cần trả</p>
+                    <p className="text-sm text-gray-600 mt-1">Tất cả sản phẩm sẽ được trả hết. Vui lòng chọn lý do trả hàng cho từng sản phẩm.</p>
                   </div>
                 </div>
               </div>
@@ -507,8 +525,10 @@ const ReturnOrderPage: React.FC = () => {
                             max={item.quantity}
                             value={item.returnQuantity}
                             onChange={(e) => handleQuantityChange(index, parseInt(e.target.value) || 0)}
-                            className="w-16 px-1 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white"
+                            className="w-16 px-1 py-1 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-100"
                             placeholder="0"
+                            readOnly
+                            disabled
                           />
                         </td>
                         <td className="px-2 py-4 text-left">
@@ -588,14 +608,14 @@ const ReturnOrderPage: React.FC = () => {
               )}
 
               {/* Instructions */}
-              {orderDetails.length > 0 && !orderDetails.some(item => item.returnQuantity > 0 && item.returnReason.trim()) && (
+              {orderDetails.length > 0 && orderDetails.some(item => !item.returnReason.trim()) && (
                 <div className="px-6 py-3 bg-yellow-50 border-t border-yellow-200">
                   <div className="flex items-center">
                     <svg className="w-5 h-5 text-yellow-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
                     <p className="text-sm text-yellow-800">
-                      Vui lòng chọn số lượng trả và lý do cho ít nhất một sản phẩm để có thể tạo đơn trả hàng.
+                      Vui lòng chọn lý do trả hàng cho tất cả sản phẩm. Tất cả sản phẩm sẽ được trả hết.
                     </p>
                   </div>
                 </div>
@@ -611,7 +631,7 @@ const ReturnOrderPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleSubmit}
-                  disabled={submitting || !orderDetails.some(item => item.returnQuantity > 0 && item.returnReason.trim())}
+                  disabled={submitting || !orderDetails.every(item => item.returnQuantity > 0 && item.returnReason.trim())}
                   className="px-8 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 font-medium shadow-lg hover:shadow-xl transition-all duration-200"
                 >
                   {submitting && (
