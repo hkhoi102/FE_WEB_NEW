@@ -444,6 +444,16 @@ const CreateOrderManagement: React.FC = () => {
     }
   }
 
+  const updateOrderItemQuantity = (productUnitId: number, quantity: number) => {
+    setOrderItems(prev =>
+      prev.map(item =>
+        item.productUnitId === productUnitId
+          ? { ...item, quantity, subtotal: quantity * item.unitPrice }
+          : item
+      )
+    )
+  }
+
   const handleAddProduct = () => {
     if (!selectedProduct || quantity <= 0) return
 
@@ -1670,10 +1680,12 @@ const CreateOrderManagement: React.FC = () => {
                                   [item.productUnitId]: item.quantity.toString()
                                 }))
                               } else {
+                                const numericValue = Math.floor(Number(value))
+                                updateOrderItemQuantity(item.productUnitId, numericValue)
                                 // Ensure input state matches the final value
                                 setQuantityInputs(prev => ({
                                   ...prev,
-                                  [item.productUnitId]: value
+                                  [item.productUnitId]: numericValue.toString()
                                 }))
                               }
                             }}
