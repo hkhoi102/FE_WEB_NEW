@@ -105,7 +105,6 @@ const WarehouseStatsPage = () => {
             <div className="space-y-4">
               {lowStock.map((row) => {
                 const maxQuantity = Math.max(...lowStock.map(item => item.totalQuantity))
-                const height = (row.totalQuantity / maxQuantity) * 200
                 return (
                   <div key={row.productUnitId} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                     <div className="flex-1 min-w-0">

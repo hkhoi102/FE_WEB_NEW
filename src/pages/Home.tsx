@@ -1,14 +1,17 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { CategoryCard, ProductCard, SectionHeader, PromoCard, TestimonialCard } from '@/components'
+import { CategoryCard, ProductCard, SectionHeader, PromoCard, TestimonialCard, PageTransition } from '@/components'
 import { CategoryService, type Category } from '@/services/categoryService'
 import { ProductService, type Product } from '@/services/productService'
+import { ReviewService, type ReviewItem } from '@/services/reviewService'
 import bannerImg from '@/images/Bannar_Big-removebg-preview.png'
 import freshFruit from '@/images/fresh_fruit.png'
 import snacksImg from '@/images/snacks.png'
 import beveragesImg from '@/images/beverages.png'
 import breadBakeryImg from '@/images/Bread_Bakery.png'
 import dishDetergentsImg from '@/images/Dish_Detergents.png'
+import specialProductImg from '@/images/z7187029658584_ddbe460cf91dbd2486aa5769073529d2.jpg'
+import summerSaleImg from '@/images/z7187029745332_28dbee8aeb07fc48ac8c9987b2a04303.jpg'
 
 // Mapping ảnh cho danh mục (fallback khi API không có ảnh)
 const categoryImageMap: Record<string, string> = {
@@ -29,6 +32,9 @@ const Home = () => {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [reviews, setReviews] = useState<ReviewItem[]>([])
+  const [reviewPage, setReviewPage] = useState<number>(0)
+  const ITEMS_PER_REVIEW_PAGE = 3
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,13 +43,16 @@ const Home = () => {
         setError(null)
 
         // Load categories and products in parallel
-        const [categoriesData, productsResponse] = await Promise.all([
+        const [categoriesData, productsResponse, reviewsData] = await Promise.all([
           CategoryService.getCategories(),
-          ProductService.getProducts(1, 10) // Get first 10 products
+          ProductService.getProducts(1, 10),
+          ReviewService.getTopReviews(5)
         ])
 
         setCategories(categoriesData)
         setProducts(productsResponse.products)
+        setReviews(reviewsData)
+        setReviewPage(0)
       } catch (err) {
         console.error('Error fetching data:', err)
         setError('Không thể tải dữ liệu')
@@ -67,28 +76,53 @@ const Home = () => {
     return categoryImageMap[category.name] || freshFruit
   }
   return (
-    <div className="space-y-16">
+    <PageTransition>
+      <div className="space-y-16">
       {/* Hero */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 bg-primary-600 text-white rounded-2xl overflow-hidden relative">
+        <div className="md:col-span-2 bg-primary-600 text-white rounded-2xl overflow-hidden relative group cursor-pointer transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
           {/* Right-side banner image */}
-          <img src={bannerImg} alt="Fresh & Healthy" className="hidden md:block absolute inset-y-0 right-0 h-full w-1/2 object-cover" />
-          <div className="relative p-10 md:p-12 max-w-xl">
+          <div className="hidden md:block absolute inset-y-0 right-0 h-full w-1/2 overflow-hidden">
+            <img
+              src={bannerImg}
+              alt="Fresh & Healthy"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+            />
+          </div>
+          <div className="relative p-10 md:p-12 max-w-xl z-10 transition-all duration-300 group-hover:translate-x-2">
             <p className="uppercase tracking-wide text-primary-100 text-sm mb-2">Chào mừng đến với Siêu Thị Thông Minh</p>
             <h1 className="text-3xl md:text-5xl font-bold leading-tight">Thực phẩm hữu cơ tươi và tốt cho sức khỏe</h1>
             <p className="mt-4 text-primary-100 max-w-md">Giảm đến 30% OFF. Miễn phí vận chuyển cho đơn hàng đầu tiên.</p>
-            <Link to="/contact" className="inline-block mt-6 bg-white text-primary-700 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100">Mua ngay</Link>
+            <Link to="/products" className="inline-block mt-6 bg-white text-primary-700 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 transition-all duration-300 group-hover:scale-105">Mua ngay</Link>
           </div>
         </div>
 
         <div className="grid gap-6">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6">
-            <h3 className="font-semibold text-gray-900">Sản phẩm đặc biệt</h3>
-            <p className="text-sm text-gray-600">Uu đãi trong tháng</p>
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative group cursor-pointer transition-all duration-500 hover:shadow-xl hover:scale-105">
+            <div className="overflow-hidden h-48">
+              <img
+                src={specialProductImg}
+                alt="Sản phẩm đặc biệt"
+                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 transition-all duration-300 group-hover:from-black/70">
+              <h3 className="font-semibold text-white text-lg transition-transform duration-300 group-hover:translate-y-[-4px]">Sản phẩm đặc biệt</h3>
+              <p className="text-sm text-white/90 transition-transform duration-300 group-hover:translate-y-[-4px]">Ưu đãi trong tháng</p>
+            </div>
           </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-6">
-            <h3 className="font-semibold text-gray-900">Khuyến mãi hè</h3>
-            <p className="text-sm text-gray-600">Giảm đến 75%</p>
+          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative group cursor-pointer transition-all duration-500 hover:shadow-xl hover:scale-105">
+            <div className="overflow-hidden h-48">
+              <img
+                src={summerSaleImg}
+                alt="Khuyến mãi hè"
+                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 transition-all duration-300 group-hover:from-black/70">
+              <h3 className="font-semibold text-white text-lg transition-transform duration-300 group-hover:translate-y-[-4px]">Khuyến mãi hè</h3>
+              <p className="text-sm text-white/90 transition-transform duration-300 group-hover:translate-y-[-4px]">Giảm đến 75%</p>
+            </div>
           </div>
         </div>
       </section>
@@ -108,7 +142,7 @@ const Home = () => {
 
       {/* Popular Categories */}
       <section>
-        <SectionHeader title="Danh mục" action={<Link to="#" className="text-primary-600 flex items-center gap-1">Tất cả <span>→</span></Link>} />
+        <SectionHeader title="Danh mục" action={<Link to="/products" className="text-primary-600 flex items-center gap-1">Tất cả <span>→</span></Link>} />
 
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -153,7 +187,7 @@ const Home = () => {
 
       {/* Popular Products */}
       <section>
-        <SectionHeader title="Sản phẩm nổi bật" action={<Link to="#" className="text-primary-600">Xem tất cả →</Link>} />
+        <SectionHeader title="Sản phẩm nổi bật" action={<Link to="/products" className="text-primary-600">Xem tất cả →</Link>} />
 
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
@@ -179,16 +213,21 @@ const Home = () => {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
             {products.length > 0 ? (
-              products.slice(0, 10).map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={{
-                    ...product,
-                    imageUrl: product.imageUrl || undefined,
-                    originalPrice: undefined
-                  }}
-                />
-              ))
+              (() => {
+                const expanded = products.flatMap((p) => {
+                  const units = p.productUnits && p.productUnits.length ? p.productUnits : [undefined as any]
+                  return units.map((u: any, idx: number) => ({
+                    ...p,
+                    id: u ? `${p.id}-${u.id}` : `${p.id}-${idx}`,
+                    productUnits: u ? [u] : p.productUnits,
+                    imageUrl: (u?.imageUrl as string) || (p.imageUrl || undefined),
+                    originalPrice: undefined,
+                  }))
+                })
+                return expanded.slice(0, 10).map((item: any) => (
+                  <ProductCard key={item.id} product={item} />
+                ))
+              })()
             ) : (
               <div className="col-span-full text-center py-8 text-gray-500">
                 Chưa có sản phẩm nào
@@ -209,18 +248,19 @@ const Home = () => {
 
       {/* Banner */}
       <section>
-        <div className="rounded-2xl bg-gray-900 text-white p-10 flex items-center justify-between">
-          <div>
-            <h3 className="text-2xl md:text-3xl font-bold">Tiết kiệm 37% trên mỗi đơn hàng</h3>
-            <p className="text-gray-300 mt-2">Miễn phí vận chuyển cho đơn hàng đầu tiên.</p>
+        <div className="rounded-2xl bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white p-10 flex items-center justify-between group cursor-pointer transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-600/10 via-transparent to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div className="relative z-10 transition-all duration-300 group-hover:translate-x-2">
+            <h3 className="text-2xl md:text-3xl font-bold transition-all duration-300 group-hover:text-green-300">Tiết kiệm 37% trên mỗi đơn hàng</h3>
+            <p className="text-gray-300 mt-2 transition-all duration-300 group-hover:text-gray-100">Miễn phí vận chuyển cho đơn hàng đầu tiên.</p>
           </div>
-          <Link to="#" className="bg-white text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100">Mua ngay</Link>
+          <Link to="/products" className="bg-white text-gray-900 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg relative z-10">Mua ngay</Link>
         </div>
       </section>
 
       {/* Featured Products */}
       <section>
-        <SectionHeader title="Bán chạy nhất" action={<Link to="#" className="text-primary-600">Xem tất cả →</Link>} />
+        <SectionHeader title="Bán chạy nhất" action={<Link to="/products" className="text-primary-600">Xem tất cả →</Link>} />
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
@@ -246,16 +286,21 @@ const Home = () => {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
             {products.length > 0 ? (
-              products.slice(0, 5).map((product) => (
-                <ProductCard
-                  key={`featured-${product.id}`}
-                  product={{
-                    ...product,
-                    imageUrl: product.imageUrl || undefined,
-                    originalPrice: undefined
-                  }}
-                />
-              ))
+              (() => {
+                const expanded = products.flatMap((p) => {
+                  const units = p.productUnits && p.productUnits.length ? p.productUnits : [undefined as any]
+                  return units.map((u: any, idx: number) => ({
+                    ...p,
+                    id: u ? `${p.id}-${u.id}` : `${p.id}-${idx}`,
+                    productUnits: u ? [u] : p.productUnits,
+                    imageUrl: (u?.imageUrl as string) || (p.imageUrl || undefined),
+                    originalPrice: undefined,
+                  }))
+                })
+                return expanded.slice(0, 5).map((item: any, i: number) => (
+                  <ProductCard key={`featured-${item.id}-${i}`} product={item} />
+                ))
+              })()
             ) : (
               <div className="col-span-full text-center py-8 text-gray-500">
                 Chưa có sản phẩm nào
@@ -267,14 +312,55 @@ const Home = () => {
 
       {/* Client Testimonials */}
       <section>
-        <SectionHeader title="Đánh giá của khách hàng" action={<div className="flex items-center gap-3"><button aria-label="Previous" className="w-9 h-9 rounded-full bg-white border border-gray-300 grid place-items-center hover:bg-gray-50"><svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg></button><button aria-label="Next" className="w-9 h-9 rounded-full bg-green-600 text-white grid place-items-center hover:bg-green-700"><svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg></button></div>} />
-        <div className="grid md:grid-cols-3 gap-6">
-          <TestimonialCard quote="Pellentesque eu nibh eget mauris congue mattis mattis nec tellus. Phasellus imperdiet elit eu magna dictum, bibendum cursus velit sodales. Donec sed neque eget" name="Robert Fox" />
-          <TestimonialCard quote="Pellentesque eu nibh eget mauris congue mattis mattis nec tellus. Phasellus imperdiet elit eu magna dictum, bibendum cursus velit sodales. Donec sed neque eget" name="Dianne Russell" />
-          <TestimonialCard quote="Pellentesque eu nibh eget mauris congue mattis mattis nec tellus. Phasellus imperdiet elit eu magna dictum, bibendum cursus velit sodales. Donec sed neque eget" name="Eleanor Pena" />
-        </div>
+        {(() => {
+          const total = reviews.length
+          const pageCount = Math.max(1, Math.ceil(total / ITEMS_PER_REVIEW_PAGE))
+          const clampedPage = total ? (reviewPage % pageCount + pageCount) % pageCount : 0
+          const start = clampedPage * ITEMS_PER_REVIEW_PAGE
+          const visible: ReviewItem[] = (() => {
+            if (!total) return []
+            if (start + ITEMS_PER_REVIEW_PAGE <= total) return reviews.slice(start, start + ITEMS_PER_REVIEW_PAGE)
+            const endCount = (start + ITEMS_PER_REVIEW_PAGE) - total
+            return [...reviews.slice(start, total), ...reviews.slice(0, endCount)]
+          })()
+
+          const goPrev = () => setReviewPage((p) => (p - 1 + pageCount) % pageCount)
+          const goNext = () => setReviewPage((p) => (p + 1) % pageCount)
+
+          return (
+            <>
+              <SectionHeader
+                title="Đánh giá của khách hàng"
+                action={
+                  <div className="flex items-center gap-3">
+                    <button
+                      aria-label="Previous"
+                      onClick={goPrev}
+                      className="w-9 h-9 rounded-full bg-white border border-gray-300 text-gray-600 grid place-items-center transition-colors hover:bg-green-600 hover:text-white hover:border-green-600 active:bg-green-700 active:border-green-700"
+                    >
+                      <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button
+                      aria-label="Next"
+                      onClick={goNext}
+                      className="w-9 h-9 rounded-full bg-white border border-gray-300 text-gray-600 grid place-items-center transition-colors hover:bg-green-600 hover:text-white hover:border-green-600 active:bg-green-700 active:border-green-700"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                  </div>
+                }
+              />
+              <div className="grid md:grid-cols-3 gap-6">
+                {visible.map((r) => (
+                  <TestimonialCard key={`${clampedPage}-${r.id}`} quote={r.quote} name={r.name} role={r.role || 'Khách hàng'} avatarUrl={r.avatarUrl} />
+                ))}
+              </div>
+            </>
+          )
+        })()}
       </section>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
 

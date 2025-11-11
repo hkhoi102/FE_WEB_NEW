@@ -1,9 +1,10 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../contexts/CartContext'
+import { PageTransition } from '../components'
 
 const Cart: React.FC = () => {
-  const { state: cartState, updateQuantity, removeFromCart, reviewCart, removePromotion, setDeliveryMethod } = useCart()
+  const { state: cartState, updateQuantity, removeFromCart, removePromotion, setDeliveryMethod } = useCart()
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -21,9 +22,7 @@ const Cart: React.FC = () => {
     removeFromCart(id)
   }
 
-  const handleRefreshCart = () => {
-    reviewCart()
-  }
+  // refresh cart button removed from UI; call reviewCart() where needed
 
   // Use review data if available, fallback to local calculation
   const reviewData = cartState.reviewData
@@ -34,11 +33,12 @@ const Cart: React.FC = () => {
 
   if (cartState.items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <PageTransition>
+        <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-          <Link to="/" className="hover:text-primary-600">Trang chủ</Link>
+          <Link to="/home" className="hover:text-primary-600">Trang chủ</Link>
           <span>›</span>
           <span className="text-gray-900">Giỏ hàng</span>
           </nav>
@@ -59,16 +59,18 @@ const Cart: React.FC = () => {
             </Link>
           </div>
         </div>
-      </div>
+        </div>
+      </PageTransition>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <PageTransition>
+      <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-          <Link to="/" className="hover:text-primary-600">Trang chủ</Link>
+          <Link to="/home" className="hover:text-primary-600">Trang chủ</Link>
           <span>›</span>
           <span className="text-gray-900">Giỏ hàng</span>
         </nav>
@@ -97,7 +99,7 @@ const Cart: React.FC = () => {
                         <div className="flex items-center gap-4">
                           <div className="w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
                             <img
-                              src={item.imageUrl || '/images/fresh_fruit.png'}
+                              src={item.imageUrl || item.productUnits?.find(u => u.id === item.unitId)?.imageUrl || '/images/fresh_fruit.png'}
                               alt={item.name}
                               className="w-full h-full object-cover"
                             />
@@ -326,7 +328,8 @@ const Cart: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
 

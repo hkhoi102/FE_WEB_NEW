@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Product } from '../services/productService'
 import { useCart } from '../contexts/CartContext'
 import QuickViewModal from './QuickViewModal'
+import xaFallback from '@/images/xa.webp'
 
 interface ProductCardProps extends HTMLAttributes<HTMLDivElement> {
   product: Product & { imageUrl?: string; originalPrice?: number }
@@ -23,8 +24,10 @@ const ProductCard = ({
     }).format(amount)
   }
 
-  // Get image URL - prioritize imageUrl prop, fallback to mapped images
+  // Get image URL - prioritize unit image, then product image, else mapped fallback
   const getImageUrl = () => {
+    const defaultUnit = (product.productUnits && product.productUnits.find(u => u.isDefault)) || product.productUnits?.[0]
+    if (defaultUnit?.imageUrl) return defaultUnit.imageUrl
     if (product.imageUrl) return product.imageUrl
 
     const imageMap: { [key: string]: string } = {
@@ -41,7 +44,7 @@ const ProductCard = ({
       'Kẹo mút Chupa Chups': '/images/snacks.png',
       'Sữa đặc Ông Thọ': '/images/Beauty_Health.png'
     }
-    return imageMap[product.name] || '/images/fresh_fruit.png'
+    return imageMap[product.name] || xaFallback
   }
 
   // Derive display unit and price from productUnits
@@ -50,6 +53,10 @@ const ProductCard = ({
   const displayPrice = defaultUnit?.currentPrice ?? defaultUnit?.convertedPrice
   const hasPrice = typeof displayPrice === 'number' && (displayPrice as number) > 0
   const hasDiscount = false
+
+  // Out-of-stock condition: consider both quantity and availableQuantity from BE
+  const availableQty = (defaultUnit?.quantity ?? defaultUnit?.availableQuantity) as number | null | undefined
+  const isOutOfStock = availableQty == null || availableQty <= 0
 
   // Show unit count if multiple units (should be 1 now since we expanded)
   const unitCount = product.productUnits?.length || 0
@@ -69,6 +76,17 @@ const ProductCard = ({
             className="object-cover w-full h-full"
           />
 
+          {/* Stock status badge */}
+          {isOutOfStock ? (
+            <div className="absolute top-2 left-2 bg-red-600 text-white text-xs font-semibold px-2 py-1 rounded">
+              Hết hàng
+            </div>
+          ) : (
+            <div className="absolute top-2 left-2 bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded">
+              Còn hàng
+            </div>
+          )}
+
           {/* Quick View Button - appears on hover */}
           <div className={`absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
             <button
@@ -82,7 +100,7 @@ const ProductCard = ({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
               </svg>
-              Quick View
+              Xem Nhanh
             </button>
           </div>
         </div>
@@ -124,13 +142,13 @@ const ProductCard = ({
 
         <button
           onClick={() => {
-            if (!hasPrice) return
+            if (!hasPrice || isOutOfStock) return
             addToCart(product)
           }}
-          disabled={!hasPrice}
-          className={`mt-2 w-full text-white text-sm py-2 rounded-lg transition-colors ${hasPrice ? 'bg-primary-600 hover:bg-primary-700' : 'bg-gray-300 cursor-not-allowed'}`}
+          disabled={!hasPrice || isOutOfStock}
+          className={`mt-2 w-full text-white text-sm py-2 rounded-lg transition-colors ${(!hasPrice || isOutOfStock) ? 'bg-gray-300 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'}`}
         >
-          {hasPrice ? 'Thêm vào giỏ' : 'Liên hệ để mua'}
+          {isOutOfStock ? 'Hết hàng' : (hasPrice ? 'Thêm vào giỏ' : 'Liên hệ để mua')}
         </button>
       </div>
     </div>

@@ -12,7 +12,7 @@ const Payment: React.FC = () => {
   const paymentInfo = order?.paymentInfo || {}
   const qrLink = state?.qrLink || paymentInfo?.qrContent
   const [isMatched, setIsMatched] = useState<boolean>(false)
-  const [checking, setChecking] = useState<boolean>(false)
+  const [_checking, setChecking] = useState<boolean>(false)
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false)
   const intervalRef = useRef<number | undefined>(undefined)
   const { clearCart } = useCart()
@@ -114,7 +114,7 @@ const Payment: React.FC = () => {
           )}
 
           <div className="mt-6 flex items-center justify-center gap-3">
-            <Link to="/" className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200">Về trang chủ</Link>
+            <Link to="/home" className="px-4 py-2 rounded bg-gray-100 text-gray-700 hover:bg-gray-200">Về trang chủ</Link>
             <button onClick={() => navigate(-1)} className="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700">Quay lại</button>
           </div>
         </div>

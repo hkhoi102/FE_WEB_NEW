@@ -3,6 +3,7 @@ import Modal from './Modal'
 import { ReturnService, ReturnStatus } from '../services/returnService'
 import { CustomerService } from '../services/customerService'
 import { ProductService } from '../services/productService'
+import { OrderApi } from '../services/orderService'
 
 type Row = {
   id: number
@@ -12,6 +13,8 @@ type Row = {
   status: ReturnStatus
   refundAmount?: number
   createdAt?: string
+  returnCode?: string
+  orderCode?: string
 }
 
 const ReturnProcessingManagement: React.FC = () => {
@@ -24,7 +27,9 @@ const ReturnProcessingManagement: React.FC = () => {
   const [nameMap, setNameMap] = useState<Record<number, string>>({})
   const [unitCache, setUnitCache] = useState<Record<number, { productName?: string; unitName?: string }>>({})
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'REQUESTED' | 'APPROVED'>('ALL')
-  const [refundMap, setRefundMap] = useState<Record<number, number>>({})
+  const [_refundMap, setRefundMap] = useState<Record<number, number>>({})
+  const [returnCodeMap, setReturnCodeMap] = useState<Record<number, string>>({})
+  const [orderCodeMap, setOrderCodeMap] = useState<Record<number, string>>({})
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)
   const formatDate = (d?: string) => d ? new Date(d).toLocaleString('vi-VN') : ''
@@ -73,6 +78,8 @@ const ReturnProcessingManagement: React.FC = () => {
           status: (r.status || 'REQUESTED') as ReturnStatus,
           refundAmount: pickRefund(r),
           createdAt: r.createdAt || r.created_at,
+          returnCode: r.returnCode || r.return_code,
+          orderCode: r.orderCode || r.order_code,
         }))
         if (!mounted) return
         setRows(mapped)
@@ -80,10 +87,33 @@ const ReturnProcessingManagement: React.FC = () => {
         const nm = await CustomerService.preloadNames(mapped.map(m => m.customerId))
         if (!mounted) return
         setNameMap(nm)
+        // Fetch return codes from return details
+        const returnDetails = await Promise.all(mapped.map(m => ReturnService.getById(m.id).catch(()=>null)))
+        const returnCodes: Record<number, string> = {}
+        returnDetails.forEach((resp: any) => {
+          const d = resp?.data
+          if (d) {
+            returnCodes[d.id] = d.returnCode || d.return_code || `#${d.id}`
+          }
+        })
+        if (!mounted) return
+        setReturnCodeMap(returnCodes)
+        // Fetch order codes from order details
+        const orderIds = Array.from(new Set(mapped.map(m => m.orderId)))
+        const orderDetails = await Promise.all(orderIds.map(id => OrderApi.getById(id).catch(()=>null)))
+        const orderCodes: Record<number, string> = {}
+        orderDetails.forEach((resp: any, idx) => {
+          const orderId = orderIds[idx]
+          const d = resp?.data || resp
+          if (d && orderId) {
+            orderCodes[orderId] = d.orderCode || d.order_code || `#${orderId}`
+          }
+        })
+        if (!mounted) return
+        setOrderCodeMap(orderCodes)
         // compute refund totals if BE list does not include
-        const details = await Promise.all(mapped.map(m => ReturnService.getById(m.id).catch(()=>null)))
         const totals: Record<number, number> = {}
-        details.forEach((resp: any) => {
+        returnDetails.forEach((resp: any) => {
           const d = resp?.data
           if (d) totals[d.id] = pickRefund(d)
         })
@@ -198,12 +228,11 @@ const ReturnProcessingManagement: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   <input type="checkbox" checked={selectedIds.length === rows.length && rows.length>0} onChange={selectAll} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã đơn trả</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã đơn hàng</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách hàng</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Đơn hàng</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hoàn tiền</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
               </tr>
             </thead>
@@ -213,14 +242,13 @@ const ReturnProcessingManagement: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <input type="checkbox" checked={selectedIds.includes(r.id)} onChange={() => toggleSelect(r.id)} className="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{r.id}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{returnCodeMap[r.id] || r.returnCode || `#${r.id}`}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{orderCodeMap[r.orderId] || r.orderCode || `#${r.orderId}`}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(r.createdAt)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{nameMap[r.customerId] || `#${r.customerId}`}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">#{r.orderId}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(r.status)}`}>{getStatusLabelVi(r.status)}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency((refundMap[r.id] ?? pickRefund(r)) || 0)}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex gap-2">
                       <button onClick={() => openDetail(r.id)} className="text-blue-600 hover:text-blue-900">Xem</button>
@@ -238,7 +266,7 @@ const ReturnProcessingManagement: React.FC = () => {
                 </tr>
               ))}
               {rows.length === 0 && !loading && (
-                <tr><td colSpan={8} className="px-6 py-4 text-center text-sm text-gray-500">Không có yêu cầu trả hàng</td></tr>
+                <tr><td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">Không có yêu cầu trả hàng</td></tr>
               )}
             </tbody>
           </table>

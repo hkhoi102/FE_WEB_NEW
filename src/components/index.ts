@@ -4,6 +4,8 @@ export { default as AdminSidebar } from './AdminSidebar'
 
 // Auth Components
 export { default as ProtectedRoute } from './ProtectedRoute'
+export { default as CustomerProtectedRoute } from './CustomerProtectedRoute'
+export { default as ChatWidget } from './ChatWidget'
 export { default as AccountDropdown } from './AccountDropdown'
 
 // UI Components
@@ -50,3 +52,4 @@ export { default as AddBarcodeModal } from './AddBarcodeModal'
 export { default as RevenuePage } from './RevenuePage'
 export { default as WarehouseStatsPage } from './WarehouseStatsPage'
 export { default as ProductStatsPage } from './ProductStatsPage'
+export { default as PageTransition } from './PageTransition'

@@ -22,7 +22,7 @@ const Checkout: React.FC = () => {
     saveInfo: false
   })
 
-  const [paymentMethod, setPaymentMethod] = useState('cod')
+  const [paymentMethod, setPaymentMethod] = useState('qrcode')
   const [orderNotes, setOrderNotes] = useState('')
   const [notification, setNotification] = useState<{
     isOpen: boolean
@@ -121,6 +121,30 @@ const Checkout: React.FC = () => {
       // Parse error message
       const errorMessage = err?.message || ''
 
+      // Helper: phân tích lỗi tồn kho từ BE và map sang tên sản phẩm trong giỏ
+      const analyzeStockError = (raw: string) => {
+        try {
+          const msg = String(raw)
+          // Mẫu thông báo từ BE: "Số sản phẩm yêu cầu vượt quá số lượng trong kho. Số lượng yêu cầu: 20, Số lượng trong kho còn: 12 (ProductUnitId: 6)"
+          const match = msg.match(/Số sản phẩm yêu cầu vượt quá số lượng trong kho\.\s*Số lượng yêu cầu: (\d+),\s*Số lượng trong kho còn: (\d+)\s*\(ProductUnitId: (\d+)\)/)
+          if (match) {
+            const requiredQty = parseInt(match[1])
+            const availableQty = parseInt(match[2])
+            const productUnitId = parseInt(match[3])
+
+            const cartItem = cartState.items.find(it => (it.unitId || it.id) === productUnitId)
+            const itemName = cartItem ? cartItem.name : `Sản phẩm ID ${productUnitId}`
+            const unitName = cartItem?.unitName ? ` - ${cartItem.unitName}` : ''
+
+            return {
+              title: 'Hết hàng',
+              message: `Sản phẩm "${itemName}${unitName}" chỉ còn ${availableQty} trong kho. Bạn đang đặt ${requiredQty}. Vui lòng giảm số lượng hoặc chọn sản phẩm khác.`
+            }
+          }
+        } catch {}
+        return null
+      }
+
       // Xử lý các loại lỗi khác nhau
       if (errorMessage.includes('403') || errorMessage.includes('403')) {
         title = 'Phiên đăng nhập hết hạn'
@@ -130,12 +154,19 @@ const Checkout: React.FC = () => {
         message = 'Tài khoản của bạn đã hết hạn. Vui lòng đăng nhập lại để tiếp tục.'
       } else if (errorMessage.includes('insufficient') || errorMessage.includes('hết hàng') || errorMessage.includes('out of stock') || errorMessage.includes('not enough')) {
         title = 'Hết hàng'
-        message = 'Rất tiếc, một hoặc nhiều sản phẩm trong giỏ hàng đã hết hàng. Vui lòng kiểm tra lại giỏ hàng và thử đặt hàng lại.'
+        // Cố gắng phân tích chi tiết; nếu không được thì dùng message chung
+        const detail = analyzeStockError(errorMessage)
+        message = detail?.message || 'Rất tiếc, một hoặc nhiều sản phẩm trong giỏ hàng đã hết hàng. Vui lòng kiểm tra lại giỏ hàng và thử đặt hàng lại.'
       } else if (errorMessage.includes('400')) {
-        title = 'Lỗi đặt hàng'
-        // Extract specific error message from BE
-        const beMessage = errorMessage.split('-').pop()?.trim()
-        message = beMessage || 'Có lỗi đặt hàng, vui lòng kiểm tra lại thông tin và thử lại.'
+        // Lỗi 400 từ BE: ưu tiên phân tích chi tiết tồn kho nếu có
+        const detail = analyzeStockError(errorMessage)
+        if (detail) {
+          title = detail.title
+          message = detail.message
+        } else {
+          title = 'Hết hàng'
+          message = 'Rất tiếc, một hoặc nhiều sản phẩm trong giỏ hàng đã hết hàng. Vui lòng kiểm tra lại giỏ hàng và thử đặt hàng lại.'
+        }
       } else {
         // Show BE error message if available
         const beMessage = errorMessage.split('-').pop()?.trim()
@@ -175,12 +206,12 @@ const Checkout: React.FC = () => {
             <p className="text-gray-600 mb-6">Bạn cần đăng nhập để tiếp tục thanh toán</p>
           </div>
           <div className="space-y-3">
-            <a
-              href="http://localhost:3000/login"
+            <Link
+              to="/user-login"
               className="w-full bg-primary-600 text-white py-3 px-4 rounded-lg hover:bg-primary-700 transition-colors font-medium inline-block"
             >
               Đăng nhập
-            </a>
+            </Link>
             <Link
               to="/cart"
               className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium inline-block"
@@ -198,7 +229,8 @@ const Checkout: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-gray-600 mb-6">
-          <Link to="/" className="hover:text-primary-600">Trang chủ</Link>
+          <Link to="/home" className="hover:text-primary-600">Trang chủ</Link>
+          <Link to="/home" className="hover:text-primary-600">Trang chủ</Link>
           <span>›</span>
           <Link to="/cart" className="hover:text-primary-600">Giỏ hàng</Link>
           <span>›</span>
@@ -473,7 +505,7 @@ const Checkout: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-gray-100 rounded-lg">
                         <img
-                          src={item.imageUrl || "/images/fresh_fruit.png"}
+                          src={item.imageUrl || item.productUnits?.find(u => u.id === item.unitId)?.imageUrl || "/images/fresh_fruit.png"}
                           alt={item.name}
                           className="w-full h-full object-cover rounded-lg"
                         />
@@ -533,7 +565,8 @@ const Checkout: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Phương thức thanh toán</h3>
 
                 <div className="space-y-4">
-                  <div className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                  {/* COD option đã bị ẩn - chỉ cho phép thanh toán chuyển khoản */}
+                  {/* <div className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
                     <input
                       type="radio"
                       id="cod"
@@ -556,9 +589,9 @@ const Checkout: React.FC = () => {
                         </div>
                       </div>
                     </label>
-                  </div>
+                  </div> */}
 
-                  <div className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors">
+                  <div className="flex items-center p-4 border-2 border-blue-200 rounded-lg bg-blue-50 cursor-pointer transition-colors">
                     <input
                       type="radio"
                       id="qrcode"
@@ -567,6 +600,7 @@ const Checkout: React.FC = () => {
                       checked={paymentMethod === 'qrcode'}
                       onChange={(e) => setPaymentMethod(e.target.value)}
                       className="w-4 h-4 text-primary-600 border-gray-300 focus:ring-primary-500"
+                      disabled
                     />
                     <label htmlFor="qrcode" className="ml-3 flex items-center w-full">
                       <div className="flex items-center">
@@ -576,7 +610,7 @@ const Checkout: React.FC = () => {
                           </svg>
                         </div>
                         <div>
-                          <div className="text-base font-medium text-gray-900">Thanh toán qua QR code</div>
+                          <div className="text-base font-medium text-gray-900">Thanh toán chuyển khoản</div>
                           <div className="text-sm text-gray-500">Quét mã QR để thanh toán online</div>
                         </div>
                       </div>

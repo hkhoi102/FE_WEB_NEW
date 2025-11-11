@@ -40,6 +40,9 @@ const ProductFormWithUnitsAndPrices = ({
     // productCode removed - using common product code instead
     barcodeCode: string;
     barcodeType: string;
+    imageUrl?: string | null;
+    imageFile?: File | null;
+    imagePreview?: string;
     prices: Array<{
       price: number;
       validFrom: string;
@@ -66,7 +69,7 @@ const ProductFormWithUnitsAndPrices = ({
 
   // Price header states (only when editing)
   // Giữ state và setter vì còn dùng ở dưới (tạo header)
-  const [unitPriceHeaders, setUnitPriceHeaders] = useState<Map<number, Array<{ id: number; name: string; description?: string; timeStart?: string; timeEnd?: string }>>>(new Map())
+  const [_unitPriceHeaders, setUnitPriceHeaders] = useState<Map<number, Array<{ id: number; name: string; description?: string; timeStart?: string; timeEnd?: string }>>>(new Map())
   const [showCreateHeaderModal, setShowCreateHeaderModal] = useState(false)
   const [newHeaderData, setNewHeaderData] = useState({
     name: '',
@@ -77,15 +80,13 @@ const ProductFormWithUnitsAndPrices = ({
   const [selectedHeaderIds, setSelectedHeaderIds] = useState<Map<number, number | ''>>(new Map())
   // Price header selection moved to Price page
   // Legacy states removed from UI (handled in Price page)
-  const [selectedHeaderInfos] = useState<Map<number, { name: string; timeStart?: string; timeEnd?: string }>>(new Map())
+  const [_selectedHeaderInfos] = useState<Map<number, { name: string; timeStart?: string; timeEnd?: string }>>(new Map())
 
   // Error handling states
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [showError, setShowError] = useState<boolean>(false)
 
-  const [imagePreview, setImagePreview] = useState<string>('')
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [uploading, setUploading] = useState(false)
+  const [uploading, setUploading] = useState<Record<number, boolean>>({})
 
   // (Removed) Bottom price management states
 
@@ -96,11 +97,10 @@ const ProductFormWithUnitsAndPrices = ({
         code: product.code || '', // Sử dụng mã sản phẩm chung
         description: product.description,
         category_id: (product as any).categoryId || (product as any).category_id,
-        image_url: (product as any).imageUrl || (product as any).image_url || '',
+        image_url: '',
         expiration_date: (product as any).expirationDate || (product as any).expiration_date || '',
         active: (product as any).active ? 1 : 0,
       })
-      setImagePreview((product as any).imageUrl || (product as any).image_url || '')
 
       // Load product units
       // Show all units including "Lon" (id=1) when editing
@@ -117,6 +117,9 @@ const ProductFormWithUnitsAndPrices = ({
         // productCode removed - using common product code
         barcodeCode: '',
         barcodeType: 'EAN13',
+        imageUrl: (u as any).imageUrl || null,
+        imageFile: null,
+        imagePreview: (u as any).imageUrl || '',
         prices: [] as Array<{ price: number; validFrom: string; validTo: string; isNew?: boolean }>
       }))
       setProductUnits(baseUnits)
@@ -157,7 +160,7 @@ const ProductFormWithUnitsAndPrices = ({
               }
             } catch {}
 
-            return { ...u, barcodeCode, barcodeType, prices }
+            return { ...u, barcodeCode, barcodeType, prices, imageUrl: u.imageUrl || null, imagePreview: u.imagePreview || '' }
           }))
           setProductUnits(enriched)
         } catch {}
@@ -172,7 +175,6 @@ const ProductFormWithUnitsAndPrices = ({
         expiration_date: '',
         active: 1,
       })
-      setImagePreview('')
       setProductUnits([])
     }
   }, [product])
@@ -238,6 +240,9 @@ const ProductFormWithUnitsAndPrices = ({
       // productCode removed - using common product code
       barcodeCode: '',
       barcodeType: 'EAN13',
+      imageUrl: null,
+      imageFile: null,
+      imagePreview: '',
       prices: [] // Không thêm giá khi tạo đơn vị mới
     }
 
@@ -276,16 +281,32 @@ const ProductFormWithUnitsAndPrices = ({
     }
   }
 
-  const updateUnitConversionFactor = (unitId: number, conversionFactor: number) => {
-    setProductUnits(prev => prev.map(u =>
-      u.id === unitId ? { ...u, conversionFactor } : u
-    ))
-  }
+  // updateUnitConversionFactor removed (unused)
 
   const updateUnitBarcode = (unitId: number, barcodeCode: string, barcodeType: string) => {
     setProductUnits(prev => prev.map(u =>
       u.id === unitId ? { ...u, barcodeCode, barcodeType } : u
     ))
+  }
+
+  const handleUnitImageChange = (unitId: number, file: File | null) => {
+    setProductUnits(prev => prev.map(u => {
+      if (u.id === unitId) {
+        if (file) {
+          const reader = new FileReader()
+          reader.onload = () => {
+            setProductUnits(prevUnits => prevUnits.map(unit =>
+              unit.id === unitId ? { ...unit, imageFile: file, imagePreview: String(reader.result) } : unit
+            ))
+          }
+          reader.readAsDataURL(file)
+          return { ...u, imageFile: file }
+        } else {
+          return { ...u, imageFile: null, imagePreview: u.imageUrl || '' }
+        }
+      }
+      return u
+    }))
   }
 
   // updateUnitCode removed - using common product code instead
@@ -303,7 +324,7 @@ const ProductFormWithUnitsAndPrices = ({
 
   // Header selection handled in Price page
   // noop
-  const handleHeaderSelection = (_unitId: number, _headerId: number) => { /* noop */ }
+  // handleHeaderSelection removed (unused)
 
   const addPriceToUnit = (unitId: number, price: number, validFrom: string, validTo: string = '') => {
     const unitSelectedHeaderId = selectedHeaderIds.get(unitId)
@@ -324,10 +345,10 @@ const ProductFormWithUnitsAndPrices = ({
   }
 
   // Price editing moved out of this modal
-  const removePriceFromUnit = (_unitId: number, _priceIndex: number) => { /* noop */ }
+  // removePriceFromUnit removed (unused)
 
   // Price modal moved to Price page
-  const openPriceModal = (_unitId: number) => { /* noop */ }
+  // openPriceModal removed (unused)
 
   const closePriceModal = () => {
     setShowPriceModal(false)
@@ -390,7 +411,7 @@ const ProductFormWithUnitsAndPrices = ({
   }
 
   // Creating headers is handled in Price page
-  const openCreateHeaderModal = (_unitId?: number) => { /* noop */ }
+  // openCreateHeaderModal removed (unused)
 
   const closeCreateHeaderModal = () => {
     setShowCreateHeaderModal(false)
@@ -564,38 +585,11 @@ const ProductFormWithUnitsAndPrices = ({
     try {
       let createdProduct
 
-      // Handle image upload
-      if (imageFile) {
-        try {
-          if (product && product.id) {
-            await ProductService.updateProductImage(product.id, imageFile)
-            createdProduct = product
-          } else {
-            createdProduct = await ProductService.createProductWithImage(productData as any, imageFile)
-          }
-        } catch (err: any) {
-          // Chỉ fallback nếu lỗi không phải 400 (trùng mã/tên)
-          if (err?.status === 400) {
-            throw err // Re-throw lỗi 400 để xử lý ở catch block chính
-          }
-          // fallback to regular creation chỉ cho lỗi khác (như upload ảnh)
-          try {
-            createdProduct = await ProductService.createProduct(productData as any)
-          } catch (fallbackErr: any) {
-            // Nếu fallback cũng lỗi 400, throw lỗi gốc
-            if (fallbackErr?.status === 400) {
-              throw fallbackErr
-            }
-            throw err // Throw lỗi gốc nếu fallback lỗi khác
-          }
-        }
+      // Regular creation/update without product image (images are now per unit)
+      if (product && product.id) {
+        createdProduct = await ProductService.updateProduct(product.id, productData as any)
       } else {
-        // Regular creation without image
-        if (product && product.id) {
-          createdProduct = await ProductService.updateProduct(product.id, productData as any)
-        } else {
-          createdProduct = await ProductService.createProduct(productData as any)
-        }
+        createdProduct = await ProductService.createProduct(productData as any)
       }
 
       // Add product units if any
@@ -638,7 +632,24 @@ const ProductFormWithUnitsAndPrices = ({
               productUnitId = productUnit?.id
             }
 
-            if (productUnitId) {
+              if (productUnitId) {
+              // Upload unit image if provided (only after we have productUnitId)
+              if (unit.imageFile && productUnitId) {
+                try {
+                  setUploading(prev => ({ ...prev, [productUnitId]: true }))
+                  await ProductService.updateUnitImage(createdProduct.id, productUnitId, unit.imageFile)
+                } catch (imageErr: any) {
+                  console.warn('Failed to upload unit image:', imageErr)
+                  // Don't stop the process if image upload fails
+                } finally {
+                  setUploading(prev => {
+                    const next = { ...prev }
+                    delete next[productUnitId]
+                    return next
+                  })
+                }
+              }
+
               // Unit code handling removed - using common product code instead
               // Upsert barcode: delete existing then add if provided
               try {
@@ -956,41 +967,8 @@ const ProductFormWithUnitsAndPrices = ({
             </div>
           </div>
 
-          {/* Ảnh sản phẩm, Danh mục và Trạng thái cùng hàng */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Ảnh sản phẩm */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Ảnh sản phẩm
-              </label>
-              {imagePreview && (
-                <img src={imagePreview} alt="preview" className="mb-2 h-16 w-16 object-cover rounded" />
-              )}
-              <div className="flex items-center gap-2">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0]
-                    if (!file) return
-                    setUploading(true)
-                    try {
-                      setImageFile(file)
-                      const reader = new FileReader()
-                      reader.onload = () => setImagePreview(String(reader.result))
-                      reader.readAsDataURL(file)
-                    } catch (err) {
-                      alert('Tải ảnh thất bại')
-                    } finally {
-                      setUploading(false)
-                    }
-                  }}
-                  className="block w-full text-sm text-gray-700"
-                />
-              </div>
-              <p className="text-xs text-gray-500 mt-1">{uploading ? 'Đang xử lý ảnh...' : 'Chọn ảnh từ máy tính'}</p>
-            </div>
-
+          {/* Danh mục và Trạng thái cùng hàng */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Danh mục */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1141,9 +1119,11 @@ const ProductFormWithUnitsAndPrices = ({
               <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                 {/* Table Header */}
                 <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
-                  <div className="grid grid-cols-6 gap-2 text-xs font-medium text-gray-600 uppercase tracking-wider">
+                  <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-600 uppercase tracking-wider">
                     <div className="col-span-2">Đơn vị</div>
+                    <div className="col-span-3">Ảnh</div>
                     <div className="col-span-4">Barcode</div>
+                    <div className="col-span-3">Thao tác</div>
                   </div>
                 </div>
 
@@ -1153,7 +1133,7 @@ const ProductFormWithUnitsAndPrices = ({
                     <div key={unit.id} className={`px-3 py-2 transition-colors ${
                       unit.active ? 'hover:bg-gray-50' : 'bg-gray-50 opacity-75'
                     }`}>
-                      <div className="grid grid-cols-6 gap-2 items-center">
+                      <div className="grid grid-cols-12 gap-2 items-center">
                         {/* Đơn vị + Hệ số + Badge */}
                         <div className="col-span-2">
                           <div className="flex items-center gap-1">
@@ -1163,6 +1143,25 @@ const ProductFormWithUnitsAndPrices = ({
                             )}
                           </div>
                           <div className="text-xs text-gray-500">Hệ số: {unit.conversionFactor}</div>
+                        </div>
+
+                        {/* Ảnh đơn vị */}
+                        <div className="col-span-3">
+                          {unit.imagePreview && (
+                            <img src={unit.imagePreview} alt={unit.unitName} className="mb-1 h-10 w-10 object-cover rounded" />
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] || null
+                              handleUnitImageChange(unit.id, file)
+                            }}
+                            className="block w-full text-xs text-gray-700"
+                          />
+                          {uploading[unit.id] && (
+                            <p className="text-xs text-gray-500 mt-1">Đang upload...</p>
+                          )}
                         </div>
 
                         {/* Barcode */}

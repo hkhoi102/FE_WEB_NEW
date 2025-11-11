@@ -4,11 +4,12 @@ import CategoryMenu from '../components/CategoryMenu'
 import ProductCard from '../components/ProductCard'
 import Pagination from '../components/Pagination'
 import { ProductService } from '../services/productService'
+import { PageTransition } from '../components'
 
 const Products: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [selectedCategory, setSelectedCategory] = useState<{ id: number; name: string } | null>(null)
-  const [sortBy, setSortBy] = useState<'name' | 'price' | 'rating'>('name')
+  const [sortBy, setSortBy] = useState<'name' | 'price'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [priceRange, setPriceRange] = useState({ min: '', max: '' })
   const [searchTerm, setSearchTerm] = useState('')
@@ -33,6 +34,8 @@ const Products: React.FC = () => {
 
   // Handle URL search params
   useEffect(() => {
+    // Scroll to top when opening Products page
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     const urlSearchTerm = searchParams.get('search')
     const urlCategoryId = searchParams.get('categoryId')
     const urlCategoryName = searchParams.get('category')
@@ -42,39 +45,185 @@ const Products: React.FC = () => {
       setSelectedCategory(null) // Clear category filter when searching from header
     }
 
-    if (urlCategoryId && urlCategoryName) {
-      setSelectedCategory({ id: parseInt(urlCategoryId), name: urlCategoryName })
+    if (urlCategoryName) {
+      const parsedId = urlCategoryId ? parseInt(urlCategoryId) : 0
+      setSelectedCategory({ id: isNaN(parsedId) ? 0 : parsedId, name: urlCategoryName })
       setSearchTerm('') // Clear search when filtering by category
     }
   }, [searchParams])
+
+  // Get price from product (works with both expanded and non-expanded products)
+  const getProductPrice = (product: any): number => {
+    if (product.currentUnit) {
+      return product.currentUnit.currentPrice ?? product.currentUnit.convertedPrice ?? 0
+    }
+    if (product.productUnits && product.productUnits.length > 0) {
+      const unit = product.productUnits[0]
+      return unit.currentPrice ?? unit.convertedPrice ?? 0
+    }
+    return 0
+  }
+
+  // Filter products by price range
+  const filterByPriceRange = (products: any[]): any[] => {
+    if (!priceRange.min && !priceRange.max) {
+      return products
+    }
+
+    const minPrice = priceRange.min ? parseFloat(priceRange.min) : 0
+    const maxPrice = priceRange.max ? parseFloat(priceRange.max) : Infinity
+
+    return products.filter((product) => {
+      const price = getProductPrice(product)
+      return price >= minPrice && price <= maxPrice
+    })
+  }
+
+  // Sort products function (works with both expanded and non-expanded products)
+  const sortProducts = (products: any[]): any[] => {
+    return [...products].sort((a, b) => {
+      if (sortBy === 'name') {
+        const nameA = (a.name || '').toLowerCase()
+        const nameB = (b.name || '').toLowerCase()
+        return sortOrder === 'asc'
+          ? nameA.localeCompare(nameB, 'vi')
+          : nameB.localeCompare(nameA, 'vi')
+      }
+
+      if (sortBy === 'price') {
+        const priceA = getProductPrice(a)
+        const priceB = getProductPrice(b)
+        return sortOrder === 'asc' ? priceA - priceB : priceB - priceA
+      }
+
+      return 0
+    })
+  }
 
   // Fetch products from API
   const loadProducts = async () => {
     setLoading(true)
     setError(null)
     try {
-      const response = await ProductService.getProducts(
-        currentPage,
-        20,
-        searchTerm || undefined,
-        selectedCategory?.id
-      )
+      const pageSize = 20
+      if (searchTerm) {
+        // Dùng endpoint search khi có từ khóa để đảm bảo độ chính xác
+        // Load all results for client-side sorting and expansion
+        const results = await ProductService.searchProducts(searchTerm, 1000)
 
-      setProductsData({
-        products: response.products,
-        totalCount: response.pagination.total_items,
-        currentPage: response.pagination.current_page,
-        totalPages: response.pagination.total_pages,
-        hasNextPage: response.pagination.current_page < response.pagination.total_pages,
-        hasPrevPage: response.pagination.current_page > 1
-      })
+        // Expand products to units first
+        const expandedResults = results.flatMap((product: any) => {
+          if (product.productUnits && product.productUnits.length > 0) {
+            return product.productUnits.map((unit: any) => ({
+              ...product,
+              id: `${product.id}-${unit.id}`,
+              productUnits: [unit],
+              currentUnit: unit
+            }))
+          }
+          return [product]
+        })
 
-      console.log('Products loaded:', {
-        currentPage: response.pagination.current_page,
-        totalPages: response.pagination.total_pages,
-        totalCount: response.pagination.total_items,
-        productsCount: response.products.length
-      })
+        // Apply price range filter
+        const filteredResults = filterByPriceRange(expandedResults)
+
+        // Apply sorting to filtered products
+        const sortedResults = sortProducts(filteredResults)
+
+        // Pagination after sorting
+        const start = (currentPage - 1) * pageSize
+        const pageItems = sortedResults.slice(start, start + pageSize)
+        const totalPages = Math.max(1, Math.ceil(sortedResults.length / pageSize))
+
+        setProductsData({
+          products: pageItems,
+          totalCount: sortedResults.length,
+          currentPage,
+          totalPages,
+          hasNextPage: currentPage < totalPages,
+          hasPrevPage: currentPage > 1
+        })
+      } else {
+        // For non-search: if price filter is active, load all products for accurate filtering
+        // Otherwise, load paginated results
+        if (priceRange.min || priceRange.max) {
+          // Load all products when price filter is active
+          const allProducts: any[] = []
+          let hasMore = true
+          let page = 0
+
+          while (hasMore) {
+            const response = await ProductService.getProducts(
+              page + 1,
+              100, // Load 100 per page to minimize API calls
+              undefined,
+              selectedCategory?.id
+            )
+
+            allProducts.push(...response.products)
+
+            if (response.products.length < 100 || page >= response.pagination.total_pages - 1) {
+              hasMore = false
+            } else {
+              page++
+            }
+          }
+
+          // Expand, filter, and sort all products
+          const expandedResults = allProducts.flatMap((product: any) => {
+            if (product.productUnits && product.productUnits.length > 0) {
+              return product.productUnits.map((unit: any) => ({
+                ...product,
+                id: `${product.id}-${unit.id}`,
+                productUnits: [unit],
+                currentUnit: unit
+              }))
+            }
+            return [product]
+          })
+
+          const filteredResults = filterByPriceRange(expandedResults)
+          const sortedResults = sortProducts(filteredResults)
+
+          // Pagination after filtering
+          const start = (currentPage - 1) * pageSize
+          const pageItems = sortedResults.slice(start, start + pageSize)
+          const totalPages = Math.max(1, Math.ceil(sortedResults.length / pageSize))
+
+          setProductsData({
+            products: pageItems,
+            totalCount: sortedResults.length,
+            currentPage,
+            totalPages,
+            hasNextPage: currentPage < totalPages,
+            hasPrevPage: currentPage > 1
+          })
+        } else {
+          // No price filter: load paginated results normally
+          const response = await ProductService.getProducts(
+            currentPage,
+            pageSize,
+            undefined,
+            selectedCategory?.id
+          )
+
+          setProductsData({
+            products: response.products,
+            totalCount: response.pagination.total_items,
+            currentPage: response.pagination.current_page,
+            totalPages: response.pagination.total_pages,
+            hasNextPage: response.pagination.current_page < response.pagination.total_pages,
+            hasPrevPage: response.pagination.current_page > 1
+          })
+
+          console.log('Products loaded:', {
+            currentPage: response.pagination.current_page,
+            totalPages: response.pagination.total_pages,
+            totalCount: response.pagination.total_items,
+            productsCount: response.products.length
+          })
+        }
+      }
     } catch (error) {
       console.error('Error fetching products:', error)
       setError('Không thể tải danh sách sản phẩm. Vui lòng thử lại.')
@@ -98,10 +247,10 @@ const Products: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, selectedCategory, searchTerm, priceRange.min, priceRange.max, sortBy, sortOrder])
 
-  // Reset to page 1 when filters change (but not on initial load)
+  // Reset to page 1 when filters or sort change
   useEffect(() => {
     setCurrentPage(1)
-  }, [selectedCategory, searchTerm, priceRange.min, priceRange.max])
+  }, [selectedCategory, searchTerm, priceRange.min, priceRange.max, sortBy, sortOrder])
 
 
   const handleCategorySelect = (category: { id: number; name: string }) => {
@@ -131,14 +280,15 @@ const Products: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <PageTransition>
+      <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Category Menu */}
           <div className="lg:w-64 flex-shrink-0">
             <CategoryMenu
-              initialActive={0}
+              initialActive={-1}
               activeCategory={selectedCategory?.name}
               onSelect={handleCategorySelect}
             />
@@ -204,9 +354,7 @@ const Products: React.FC = () => {
             <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-700">
-                    Hiển thị {productsData.products.length} / {productsData.totalCount} sản phẩm
-                  </span>
+
                   {searchTerm && (
                     <span className="text-sm text-primary-600 bg-primary-50 px-2 py-1 rounded">
                       Tìm kiếm: "{searchTerm}"
@@ -225,7 +373,7 @@ const Products: React.FC = () => {
                     value={`${sortBy}-${sortOrder}`}
                     onChange={(e) => {
                       const [field, order] = e.target.value.split('-')
-                      setSortBy(field as 'name' | 'price' | 'rating')
+                      setSortBy(field as 'name' | 'price')
                       setSortOrder(order as 'asc' | 'desc')
                     }}
                     className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -234,7 +382,6 @@ const Products: React.FC = () => {
                     <option value="name-desc">Tên Z-A</option>
                     <option value="price-asc">Giá thấp đến cao</option>
                     <option value="price-desc">Giá cao đến thấp</option>
-                    <option value="rating-desc">Đánh giá cao nhất</option>
                   </select>
                 </div>
               </div>
@@ -282,11 +429,32 @@ const Products: React.FC = () => {
                 return [product]
               })
 
-              console.log('🔍 Debug - Expanded products:', expandedProducts)
+              // Apply price range filter
+              const filteredProducts = filterByPriceRange(expandedProducts)
+
+              // Sort filtered products
+              const sortedExpandedProducts = sortProducts(filteredProducts)
+
+              // Show empty state if all products are filtered out
+              if (sortedExpandedProducts.length === 0) {
+                return (
+                  <div className="text-center py-12">
+                    <div className="text-gray-400 mb-4">
+                      <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy sản phẩm trong khoảng giá</h3>
+                    <p className="text-gray-500">Thử thay đổi khoảng giá để tìm sản phẩm khác.</p>
+                  </div>
+                )
+              }
+
+              console.log('🔍 Debug - Expanded products:', sortedExpandedProducts)
 
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {expandedProducts.map((product: any) => (
+                  {sortedExpandedProducts.map((product: any) => (
                     <ProductCard
                       key={product.id}
                       product={product}
@@ -312,10 +480,7 @@ const Products: React.FC = () => {
             {/* Pagination */}
             {!loading && !error && productsData.totalCount > 0 && (
               <div className="mt-8 flex flex-col items-center gap-4">
-                <div className="text-sm text-gray-600">
-                  Trang {productsData.currentPage} / {productsData.totalPages}
-                  (Hiển thị {productsData.products.length} / {productsData.totalCount} sản phẩm)
-                </div>
+
                 <Pagination
                   pagination={{
                     current_page: productsData.currentPage,
@@ -330,7 +495,8 @@ const Products: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </PageTransition>
   )
 }
 

@@ -1,8 +1,9 @@
 import { ReactNode, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import CategoryMenu from './CategoryMenu'
 import { useCart } from '../contexts/CartContext'
 import { useUserAuth } from '../contexts/UserAuthContext'
+import { ProductService, type Product, type ProductUnit } from '@/services/productService'
+import { ChatWidget } from '@/components'
 
 interface LayoutProps {
   children: ReactNode
@@ -11,33 +12,24 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
   const location = useLocation()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [_searchParams] = useSearchParams()
   const { state: cartState } = useCart()
   const { user, isAuthenticated, logout } = useUserAuth()
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState<boolean>(false)
+  // Categories dropdown removed
   const [headerSearchTerm, setHeaderSearchTerm] = useState<string>('')
-  const categoriesRef = useRef<HTMLDivElement | null>(null)
+  const [suggestions, setSuggestions] = useState<Product[]>([])
+  const [isSuggestOpen, setIsSuggestOpen] = useState<boolean>(false)
+  // const categoriesRef = useRef<HTMLDivElement | null>(null)
+  const suggestAbortRef = useRef<AbortController | null>(null)
 
-  // Get current active category from URL (only on products page)
-  const currentCategory = location.pathname === '/products' ? searchParams.get('category') || '' : ''
+  const getSuggestionImage = (p: Product, u?: ProductUnit): string | undefined => {
+    const unitImg = u?.imageUrl || p.productUnits?.find(x => x.isDefault)?.imageUrl || p.productUnits?.[0]?.imageUrl
+    return (unitImg as string) || (p.imageUrl as string) || undefined
+  }
 
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (!categoriesRef.current) return
-      if (!categoriesRef.current.contains(e.target as Node)) {
-        setIsCategoriesOpen(false)
-      }
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setIsCategoriesOpen(false)
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onClickOutside)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [])
+  // Current category not used
+
+  // Categories dropdown behaviors removed
 
   const handleHeaderSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,6 +41,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   const handleHeaderSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setHeaderSearchTerm(e.target.value)
+    setIsSuggestOpen(true)
   }
 
   const handleHeaderSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -57,8 +50,29 @@ const Layout = ({ children }: LayoutProps) => {
     }
   }
 
+  // Debounced suggestions loader
+  useEffect(() => {
+    const term = headerSearchTerm.trim()
+    if (term.length < 2) {
+      setSuggestions([])
+      return
+    }
+    const timer = setTimeout(async () => {
+      try {
+        suggestAbortRef.current?.abort()
+        const controller = new AbortController()
+        suggestAbortRef.current = controller
+        const res = await ProductService.searchProducts(term, 8)
+        setSuggestions(res)
+      } catch (_err) {
+        setSuggestions([])
+      }
+    }, 250)
+    return () => clearTimeout(timer)
+  }, [headerSearchTerm])
+
   const navItems = [
-    { path: '/', label: 'Trang chủ' },
+    { path: '/home', label: 'Trang chủ' },
     { path: '/products', label: 'Sản phẩm' },
     { path: '/about', label: 'Giới thiệu' },
     { path: '/contact', label: 'Liên hệ' },
@@ -71,7 +85,6 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-10 flex items-center justify-between">
           <p>Chào mừng đến với Siêu Thị Thông Minh — Thực phẩm tươi ngon giao hàng nhanh chóng</p>
           <div className="flex items-center gap-6">
-            <span>Trợ giúp</span>
             <Link to="/my-orders" className="hover:text-white underline-offset-2 hover:underline">Theo dõi đơn hàng</Link>
             <span>Liên hệ: +84 123 456 789</span>
           </div>
@@ -83,7 +96,7 @@ const Layout = ({ children }: LayoutProps) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-4 gap-4">
             {/* Logo */}
-            <Link to="/" className="text-2xl md:text-3xl font-bold text-primary-600">Siêu Thị Thông Minh</Link>
+            <Link to="/home" className="text-2xl md:text-3xl font-bold text-primary-600">Siêu Thị Thông Minh</Link>
 
             {/* Search */}
             <div className="flex-1 hidden md:block">
@@ -94,6 +107,8 @@ const Layout = ({ children }: LayoutProps) => {
                     value={headerSearchTerm}
                     onChange={handleHeaderSearchChange}
                     onKeyPress={handleHeaderSearchKeyPress}
+                    onFocus={() => setIsSuggestOpen(true)}
+                    onBlur={() => setTimeout(() => setIsSuggestOpen(false), 150)}
                     placeholder="Tìm kiếm sản phẩm, danh mục..."
                     className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
@@ -104,6 +119,54 @@ const Layout = ({ children }: LayoutProps) => {
                   >
                     Tìm
                   </button>
+
+                  {isSuggestOpen && suggestions.length > 0 && (
+                    <div className="absolute z-40 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                      <ul className="max-h-80 overflow-auto">
+                        {suggestions.flatMap((p) => {
+                          const units = p.productUnits && p.productUnits.length ? p.productUnits : [undefined as unknown as ProductUnit]
+                          return units.map((u) => ({ p, u }))
+                        }).map(({ p, u }, idx) => (
+                          <li key={`${p.id}-${u ? u.id : 'no-unit'}-${idx}`}>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => e.preventDefault()}
+                              onClick={() => {
+                                const unitId = u?.id || p.defaultUnitId || p.productUnits?.[0]?.id
+                                navigate(`/product/${p.id}${unitId ? `-${unitId}` : ''}`)
+                                setIsSuggestOpen(false)
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-3"
+                            >
+                              <div className="w-10 h-10 rounded bg-gray-100 overflow-hidden flex-shrink-0">
+                                {getSuggestionImage(p, u) ? (
+                                  <img src={getSuggestionImage(p, u)} alt={p.name} className="w-full h-full object-cover" />
+                                ) : null}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-900 line-clamp-1">{p.name}</span>
+                                  {p.categoryName && (
+                                    <span className="text-xs text-gray-500">· {p.categoryName}</span>
+                                  )}
+                                </div>
+                                <div className="mt-0.5 flex items-center gap-2 flex-wrap">
+                                  {u?.unitName && (
+                                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">{u.unitName}</span>
+                                  )}
+                                  {typeof (u?.currentPrice ?? u?.convertedPrice) === 'number' && (
+                                    <span className="text-[11px] text-primary-600 font-medium">
+                                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format((u?.currentPrice ?? u?.convertedPrice) as number)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </form>
               </div>
             </div>
@@ -135,12 +198,12 @@ const Layout = ({ children }: LayoutProps) => {
                     </button>
                   </div>
                 ) : (
-                  <a
-                    href="http://localhost:3000/login"
+                  <Link
+                    to="/user-login"
                     className="text-sm text-gray-700 hover:text-primary-600"
                   >
                     Đăng nhập
-                  </a>
+                  </Link>
                 )}
               </div>
               <Link to="/wishlist" className="hidden md:flex items-center gap-2 text-gray-700 hover:text-primary-600">
@@ -162,28 +225,8 @@ const Layout = ({ children }: LayoutProps) => {
         {/* Nav bar */}
         <div className="border-t border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-12 flex items-center justify-between relative">
-            <div className="relative" ref={categoriesRef}>
-              <button onClick={() => setIsCategoriesOpen((v) => !v)} className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                <span className="truncate max-w-32">
-                  {currentCategory || 'Tất cả danh mục'}
-                </span>
-                <svg className="w-4 h-4 ml-1" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
-              </button>
-              {/* Dropdown */}
-              {isCategoriesOpen && (
-                <div className="absolute z-30 mt-2 md:block">
-                  <CategoryMenu
-                    activeCategory={currentCategory}
-                    onSelect={(category) => {
-                      console.log('Selected category:', category)
-                      setIsCategoriesOpen(false)
-                      navigate(`/products?category=${encodeURIComponent(category.name)}`)
-                    }}
-                  />
-                </div>
-              )}
-            </div>
+            {/* Categories dropdown removed per request */}
+            <div></div>
 
             <nav className="hidden md:flex items-center gap-6">
               {navItems.map((item) => (
@@ -212,7 +255,7 @@ const Layout = ({ children }: LayoutProps) => {
       <footer className="bg-gray-900 text-gray-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <Link to="/" className="text-xl font-bold text-white">Siêu Thị Thông Minh</Link>
+            <Link to="/home" className="text-xl font-bold text-white">Siêu Thị Thông Minh</Link>
             <p className="mt-2 text-sm text-gray-400">Thực phẩm tươi ngon, lành mạnh giao tận nhà.</p>
           </div>
 
@@ -240,6 +283,9 @@ const Layout = ({ children }: LayoutProps) => {
           </div>
         </div>
       </footer>
+
+      {/* Chat support */}
+      <ChatWidget />
     </div>
   )
 }

@@ -46,12 +46,15 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       const unitName = defaultUnit?.unitName
       // Use unit.id (productUnit ID) instead of unitId (unit of measure ID)
       const unitId = defaultUnit?.id
+      // Get unit image, fallback to product image
+      const unitImageUrl = defaultUnit?.imageUrl || action.payload.imageUrl || undefined
 
       console.log('🛒 Add to Cart Debug:', {
         productId: action.payload.id,
         unitId: unitId,
         unitName: unitName,
         price: price,
+        unitImageUrl: unitImageUrl,
         productUnits: action.payload.productUnits
       })
 
@@ -65,7 +68,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
             : item
         )
       } else {
-        const enriched: CartItem = { ...action.payload, quantity: 1, price, unitName, unitId }
+        const enriched: CartItem = { ...action.payload, quantity: 1, price, unitName, unitId, imageUrl: unitImageUrl }
         newItems = [...state.items, enriched]
       }
 

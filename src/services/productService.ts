@@ -13,6 +13,7 @@ export interface ProductUnit {
   convertedPrice?: number
   quantity?: number
   availableQuantity?: number
+  imageUrl?: string | null
 }
 
 export interface Barcode {
@@ -148,6 +149,7 @@ export class ProductService {
       convertedPrice: typeof u.convertedPrice === 'number' ? u.convertedPrice : undefined,
       quantity: typeof u.quantity === 'number' ? u.quantity : undefined,
       availableQuantity: typeof u.availableQuantity === 'number' ? u.availableQuantity : undefined,
+      imageUrl: ProductService.toAbsoluteUrl(u.imageUrl ?? u.image_url) ?? null,
     })
 
     const mapProduct = (p: any): Product => ({
@@ -180,6 +182,58 @@ export class ProductService {
         items_per_page: result?.size ?? limit,
       },
     }
+  }
+
+  // Tìm kiếm sản phẩm qua endpoint chuyên dụng /products/search?q=
+  static async searchProducts(query: string, limit: number = 10): Promise<Product[]> {
+    const params = new URLSearchParams()
+    if (query) params.append('q', query)
+    if (limit) params.append('size', String(limit))
+
+    const res = await fetch(`${API_BASE_URL}/products/search?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getAuthHeaders(),
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(text || `Failed to search products: ${res.status} ${res.statusText}`)
+    }
+    const result = await res.json()
+
+    const mapUnit = (u: any): ProductUnit => ({
+      id: u.id,
+      unitId: u.unitId,
+      unitName: u.unitName,
+      conversionFactor: u.conversionFactor ?? u.conversionRate ?? 1,
+      isDefault: !!u.isDefault,
+      active: u.active !== undefined ? u.active : true,
+      code: u.code,
+      currentPrice: typeof u.currentPrice === 'number' ? u.currentPrice : undefined,
+      convertedPrice: typeof u.convertedPrice === 'number' ? u.convertedPrice : undefined,
+      quantity: typeof u.quantity === 'number' ? u.quantity : undefined,
+      availableQuantity: typeof u.availableQuantity === 'number' ? u.availableQuantity : undefined,
+      imageUrl: ProductService.toAbsoluteUrl(u.imageUrl ?? u.image_url) ?? null,
+    })
+
+    const mapProduct = (p: any): Product => ({
+      id: p.id,
+      name: p.name,
+      code: p.code,
+      description: p.description ?? '',
+      imageUrl: ProductService.toAbsoluteUrl(p.imageUrl ?? p.image_url) ?? null,
+      expirationDate: p.expirationDate ?? null,
+      categoryId: p.categoryId,
+      categoryName: p.categoryName,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      active: p.active,
+      defaultUnitId: p.defaultUnitId ?? null,
+      productUnits: Array.isArray(p.productUnits) ? p.productUnits.map(mapUnit) : [],
+      barcodes: p.barcodes ?? null,
+    })
+
+    const dataArray = Array.isArray(result?.data) ? result.data : Array.isArray(result) ? result : []
+    return dataArray.map(mapProduct)
   }
 
   static async getCategories(): Promise<ProductCategory[]> {
@@ -300,6 +354,7 @@ export class ProductService {
       convertedPrice: typeof u.convertedPrice === 'number' ? u.convertedPrice : undefined,
       quantity: typeof u.quantity === 'number' ? u.quantity : undefined,
       availableQuantity: typeof u.availableQuantity === 'number' ? u.availableQuantity : undefined,
+      imageUrl: this.toAbsoluteUrl(u.imageUrl ?? u.image_url) ?? null,
     })
     const prod: Product = {
       id: data.id,
@@ -340,6 +395,7 @@ export class ProductService {
       convertedPrice: typeof u.convertedPrice === 'number' ? u.convertedPrice : undefined,
       quantity: typeof u.quantity === 'number' ? u.quantity : undefined,
       availableQuantity: typeof u.availableQuantity === 'number' ? u.availableQuantity : undefined,
+      imageUrl: this.toAbsoluteUrl(u.imageUrl ?? u.image_url) ?? null,
     })
     const prod: Product = {
       id: data.id,
@@ -630,6 +686,25 @@ export class ProductService {
       body: form,
     })
     if (!res.ok) throw new Error(`Failed to update product image: ${res.status} ${res.statusText}`)
+    const result = await res.json().catch(() => ({}))
+    return result.data ?? result
+  }
+
+  // Update product unit image by ID (multipart PUT)
+  static async updateUnitImage(productId: number, unitId: number, imageFile: File): Promise<any> {
+    const form = new FormData()
+    form.append('image', imageFile)
+    const res = await fetch(`${API_BASE_URL}/products/${productId}/units/${unitId}/image`, {
+      method: 'PUT',
+      headers: (() => {
+        const headers: Record<string, string> = {}
+        const token = localStorage.getItem('access_token')
+        if (token) headers['Authorization'] = `Bearer ${token}`
+        return headers
+      })(),
+      body: form,
+    })
+    if (!res.ok) throw new Error(`Failed to update unit image: ${res.status} ${res.statusText}`)
     const result = await res.json().catch(() => ({}))
     return result.data ?? result
   }

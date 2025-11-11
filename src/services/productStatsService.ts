@@ -1,5 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
-import { ProductService, Product, ProductUnit } from '@/services/productService'
+import { ProductService } from '@/services/productService'
 
 function authHeaders(): HeadersInit {
   // Try user token first, fallback to admin token
