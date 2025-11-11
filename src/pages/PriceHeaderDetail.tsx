@@ -157,14 +157,13 @@ const PriceHeaderDetail = () => {
     const productUnitId = Number(selectedUnitId)
     const unitName = unitOptions.find(u => u.id === productUnitId)?.name || `Unit #${selectedUnitId}`
 
-    // Kiểm tra xem sản phẩm đã có trong header chưa
-    const productExists = existingProducts.find(ep =>
-      ep.productCode === maSP.trim() ||
+    // Kiểm tra xem đơn vị sản phẩm đã có trong header chưa (chỉ chặn trùng cùng đơn vị)
+    const productUnitExists = existingProducts.some(ep =>
       ep.units.some(unit => unit.productUnitId === productUnitId)
     )
 
-    if (productExists) {
-      setMessage('Sản phẩm này đã có giá trong bảng giá. Vui lòng chọn sản phẩm khác.')
+    if (productUnitExists) {
+      setMessage('Đơn vị này đã có giá trong bảng giá. Vui lòng chọn đơn vị khác.')
       setTimeout(() => setMessage(''), 3000)
       return
     }
