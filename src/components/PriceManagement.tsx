@@ -28,6 +28,13 @@ const PriceManagement = () => {
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
+  // Edit modal states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isEditLoading, setIsEditLoading] = useState(false)
+  const [isUpdatingHeader, setIsUpdatingHeader] = useState(false)
+  const [editTargetHeader, setEditTargetHeader] = useState<PriceHeader | null>(null)
+  const [editFormData, setEditFormData] = useState({ name: '', description: '', timeStart: '', timeEnd: '', active: true })
+
   // Notification modal
   const [notify, setNotify] = useState<{ open: boolean; title: string; message: string; type: 'success' | 'error' }>({ open: false, title: '', message: '', type: 'success' })
   const openNotify = (title: string, message: string, type: 'success' | 'error' = 'success') => setNotify({ open: true, title, message, type })
@@ -162,9 +169,137 @@ const PriceManagement = () => {
     }
   }
 
+  const openEditModal = async (header: PriceHeader) => {
+    setEditTargetHeader(header)
+    setEditFormData({
+      name: header.name || '',
+      description: header.description || '',
+      timeStart: formatDateTimeForInput(header.timeStart),
+      timeEnd: formatDateTimeForInput(header.timeEnd),
+      active: header.active ?? true
+    })
+    setIsEditModalOpen(true)
+    setIsEditLoading(true)
+    try {
+      const detail: any = await ProductService.getPriceHeaderById(header.id)
+      if (detail) {
+        const merged: PriceHeader = {
+          id: detail.id ?? header.id,
+          name: detail.name ?? header.name,
+          description: detail.description ?? header.description,
+          timeStart: detail.timeStart ?? header.timeStart,
+          timeEnd: detail.timeEnd ?? header.timeEnd,
+          active: detail.active ?? header.active,
+          createdAt: detail.createdAt ?? header.createdAt,
+        }
+        setEditTargetHeader(merged)
+        setEditFormData({
+          name: merged.name || '',
+          description: merged.description || '',
+          timeStart: formatDateTimeForInput(merged.timeStart),
+          timeEnd: formatDateTimeForInput(merged.timeEnd),
+          active: merged.active ?? true
+        })
+      }
+    } catch (error) {
+      console.error('Error loading price header detail for edit:', error)
+    } finally {
+      setIsEditLoading(false)
+    }
+  }
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false)
+    setIsEditLoading(false)
+    setEditTargetHeader(null)
+    setEditFormData({ name: '', description: '', timeStart: '', timeEnd: '', active: true })
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editTargetHeader) return
+    const trimmedName = editFormData.name.trim()
+    if (!trimmedName) {
+      openNotify('Thiếu thông tin', 'Tên bảng giá là bắt buộc', 'error')
+      return
+    }
+
+    if (editFormData.timeStart && editFormData.timeEnd) {
+      const start = new Date(editFormData.timeStart)
+      const end = new Date(editFormData.timeEnd)
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && start > end) {
+        openNotify('Thiếu thông tin', 'Thời gian bắt đầu phải trước thời gian kết thúc', 'error')
+        return
+      }
+    }
+
+    setIsUpdatingHeader(true)
+    try {
+      await ProductService.updatePriceHeader(editTargetHeader.id, {
+        name: trimmedName,
+        description: editFormData.description?.trim() ?? '',
+        timeStart: editFormData.timeStart || undefined,
+        timeEnd: editFormData.timeEnd || undefined,
+        active: editFormData.active
+      })
+
+      let refreshed: PriceHeader | null = null
+      try {
+        const detail: any = await ProductService.getPriceHeaderById(editTargetHeader.id)
+        if (detail) {
+          refreshed = {
+            id: detail.id ?? editTargetHeader.id,
+            name: detail.name ?? trimmedName,
+            description: detail.description ?? editFormData.description,
+            timeStart: detail.timeStart ?? editFormData.timeStart,
+            timeEnd: detail.timeEnd ?? editFormData.timeEnd,
+            active: detail.active ?? editFormData.active,
+            createdAt: detail.createdAt ?? editTargetHeader.createdAt,
+          }
+        }
+      } catch (error) {
+        console.error('Error refreshing price header after update:', error)
+      }
+
+      await loadHeaders()
+      if (refreshed) {
+        if (selectedHeader && selectedHeader.id === refreshed.id) {
+          setSelectedHeader(refreshed)
+        }
+      } else if (selectedHeader && selectedHeader.id === editTargetHeader.id) {
+        setSelectedHeader(prev => prev ? ({
+          ...prev,
+          name: trimmedName,
+          description: editFormData.description,
+          timeStart: editFormData.timeStart || prev.timeStart,
+          timeEnd: editFormData.timeEnd || prev.timeEnd,
+          active: editFormData.active
+        }) : prev)
+      }
+
+      openNotify('Thành công', 'Đã cập nhật bảng giá', 'success')
+      closeEditModal()
+    } catch (error: any) {
+      console.error('Error updating price header:', error)
+      openNotify('Lỗi', error?.message || 'Không thể cập nhật bảng giá', 'error')
+    } finally {
+      setIsUpdatingHeader(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.name.trim()) return
+
+    if (formData.timeStart && formData.timeEnd) {
+      const start = new Date(formData.timeStart)
+      const end = new Date(formData.timeEnd)
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && start > end) {
+        openNotify('Thiếu thông tin', 'Thời gian bắt đầu phải trước thời gian kết thúc', 'error')
+        return
+      }
+    }
+
     setIsSubmitting(true)
     try {
       await ProductService.createGlobalPriceHeader({
@@ -186,6 +321,20 @@ const PriceManagement = () => {
     const d = new Date(value)
     if (isNaN(d.getTime())) return '—'
     return d.toLocaleDateString('vi-VN')
+  }
+
+  const formatDateTimeForInput = (value?: string) => {
+    if (!value) return ''
+    const date = new Date(value)
+    if (!isNaN(date.getTime())) {
+      const offset = date.getTimezoneOffset()
+      const local = new Date(date.getTime() - offset * 60000)
+      return local.toISOString().slice(0, 16)
+    }
+    if (value.includes('T')) {
+      return value.slice(0, 16)
+    }
+    return ''
   }
 
   return (
@@ -237,11 +386,15 @@ const PriceManagement = () => {
                     <span className={`px-2 py-0.5 rounded-full text-xs border ${h.active ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>{h.active ? 'Đang hiệu lực' : 'Ngưng' }</span>
                   </td>
                   <td className="px-5 py-2 whitespace-nowrap text-sm">
-                    <div className="flex items-center justify-center">
+                    <div className="flex items-center justify-center gap-2">
                       <button
-                        className="px-3 py-1.5 text-xs rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 mr-2"
+                        className="px-3 py-1.5 text-xs rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200"
                         onClick={() => openDetailModal(h)}
                       >Chi tiết</button>
+                      <button
+                        className="px-3 py-1.5 text-xs rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100"
+                        onClick={() => openEditModal(h)}
+                      >Chỉnh sửa</button>
                       <button
                         className="px-3 py-1.5 text-xs rounded-md text-white bg-orange-600 hover:bg-orange-700"
                         onClick={() => navigate(`/admin/prices/${h.id}`)}
@@ -323,6 +476,105 @@ const PriceManagement = () => {
                 <div className="flex justify-end space-x-3 mt-6">
                   <button type="button" onClick={closeModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
                   <button type="submit" disabled={isSubmitting} className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50">{isSubmitting ? 'Đang lưu...' : 'Tạo'}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50" onClick={closeEditModal} />
+
+            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div className="flex items-center justify-between p-6 border-b">
+                <h3 className="text-lg font-semibold text-gray-900">Chỉnh sửa bảng giá</h3>
+                <button onClick={closeEditModal} className="text-gray-400 hover:text-gray-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+                {isEditLoading && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                    Đang tải dữ liệu bảng giá...
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tên bảng giá *</label>
+                  <input
+                    type="text"
+                    value={editFormData.name}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="VD: Bảng giá mùa hè"
+                    required
+                    disabled={isUpdatingHeader}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Mô tả</label>
+                  <input
+                    type="text"
+                    value={editFormData.description}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="Ghi chú về bảng giá"
+                    disabled={isUpdatingHeader}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Hiệu lực từ</label>
+                    <input
+                      type="datetime-local"
+                      value={editFormData.timeStart}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, timeStart: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      disabled={isUpdatingHeader}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Hiệu lực đến</label>
+                    <input
+                      type="datetime-local"
+                      value={editFormData.timeEnd}
+                      onChange={(e) => setEditFormData(prev => ({ ...prev, timeEnd: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      disabled={isUpdatingHeader}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    id="editActive"
+                    type="checkbox"
+                    checked={!!editFormData.active}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, active: e.target.checked }))}
+                    className="h-4 w-4 text-green-600 border-gray-300 rounded"
+                    disabled={isUpdatingHeader}
+                  />
+                  <label htmlFor="editActive" className="text-sm text-gray-700">
+                    Kích hoạt bảng giá
+                  </label>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-2">
+                  <button type="button" onClick={closeEditModal} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Hủy</button>
+                  <button
+                    type="submit"
+                    disabled={isUpdatingHeader}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {isUpdatingHeader ? 'Đang lưu...' : 'Lưu thay đổi'}
+                  </button>
                 </div>
               </form>
             </div>

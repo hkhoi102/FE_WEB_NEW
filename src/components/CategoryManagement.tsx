@@ -103,6 +103,8 @@ const CategoryManagement = () => {
       name: category.name,
       description: category.description
     })
+    setImageFile(null)
+    setImagePreview(category.imageUrl || '')
     setIsModalOpen(true)
   }
 
@@ -146,7 +148,11 @@ const CategoryManagement = () => {
           description: formData.description.trim()
         }
 
-        await CategoryService.updateCategory(editingCategory.id, updateData)
+          await CategoryService.updateCategory(
+            editingCategory.id,
+            updateData,
+            imageFile || undefined
+          )
       } else {
         // Create new category
         if (imageFile) {
@@ -487,40 +493,42 @@ const CategoryManagement = () => {
                     />
                   </div>
 
-                  {/* Image Upload - Only for new categories */}
-                  {!editingCategory && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Ảnh danh mục (tùy chọn)
-                      </label>
-                      {imagePreview && (
-                        <div className="mb-2">
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            className="h-20 w-20 object-cover rounded-lg border border-gray-300"
-                          />
-                        </div>
-                      )}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) {
-                            setImageFile(file)
-                            const reader = new FileReader()
-                            reader.onload = () => setImagePreview(reader.result as string)
-                            reader.readAsDataURL(file)
-                          }
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        Chọn ảnh để tạo danh mục với hình ảnh
-                      </p>
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Ảnh danh mục (tùy chọn)
+                    </label>
+                    {imagePreview && (
+                      <div className="mb-2">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="h-20 w-20 object-cover rounded-lg border border-gray-300"
+                        />
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) {
+                          setImageFile(file)
+                          const reader = new FileReader()
+                          reader.onload = () => setImagePreview(reader.result as string)
+                          reader.readAsDataURL(file)
+                        } else {
+                          setImageFile(null)
+                          setImagePreview(editingCategory?.imageUrl || '')
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {editingCategory
+                        ? 'Để giữ nguyên ảnh hiện tại, bạn không cần chọn ảnh mới.'
+                        : 'Chọn ảnh để tạo danh mục với hình ảnh.'}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex justify-end space-x-3 mt-6">

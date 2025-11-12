@@ -21,16 +21,24 @@ export interface UpdateCategoryRequest {
 }
 
 export class CategoryService {
-  private static getAuthHeaders(): HeadersInit {
-    // Try user token first, fallback to admin token
+  private static getToken(): string | null {
     const userToken = localStorage.getItem('user_access_token')
     const adminToken = localStorage.getItem('access_token')
-    const token = userToken || adminToken
+    return userToken || adminToken
+  }
+
+  private static getAuthHeaders(): HeadersInit {
+    const token = this.getToken()
 
     return {
-      'Authorization': `Bearer ${token}`,
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       'Content-Type': 'application/json',
     }
+  }
+
+  private static getAuthorizationHeader(): HeadersInit {
+    const token = this.getToken()
+    return token ? { 'Authorization': `Bearer ${token}` } : {}
   }
 
   // Lấy danh sách tất cả categories
@@ -98,7 +106,7 @@ export class CategoryService {
     const response = await fetch(`${API_BASE_URL}/categories/with-image`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('user_access_token') || localStorage.getItem('access_token')}`,
+        ...this.getAuthorizationHeader(),
         // Don't set Content-Type for FormData, let browser set it with boundary
       },
       body: formData,
@@ -114,11 +122,28 @@ export class CategoryService {
   }
 
   // Cập nhật category
-  static async updateCategory(id: number, categoryData: UpdateCategoryRequest): Promise<Category> {
+  static async updateCategory(id: number, categoryData: UpdateCategoryRequest, imageFile?: File): Promise<Category> {
+    const authHeader = this.getAuthorizationHeader()
+    const hasImage = Boolean(imageFile)
+
     const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
       method: 'PUT',
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(categoryData),
+      headers: hasImage
+        ? authHeader
+        : {
+            ...authHeader,
+            'Content-Type': 'application/json',
+          },
+      body: hasImage
+        ? (() => {
+            const formData = new FormData()
+            formData.append('data', JSON.stringify(categoryData))
+            if (imageFile) {
+              formData.append('image', imageFile)
+            }
+            return formData
+          })()
+        : JSON.stringify(categoryData),
     })
 
     if (!response.ok) {

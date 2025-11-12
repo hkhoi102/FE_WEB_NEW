@@ -889,6 +889,42 @@ export class ProductService {
     return result.data ?? result
   }
 
+  static async updatePriceHeader(
+    priceHeaderId: number,
+    payload: { name?: string; description?: string | null; timeStart?: string | null; timeEnd?: string | null; active?: boolean }
+  ): Promise<any> {
+    const cleanPayload: Record<string, any> = {}
+
+    if (payload.name !== undefined) {
+      const trimmed = payload.name?.trim()
+      if (trimmed) cleanPayload.name = trimmed
+    }
+    if (payload.description !== undefined) {
+      const trimmed = payload.description?.trim()
+      if (trimmed) cleanPayload.description = trimmed
+      else if (payload.description === '' || payload.description === null) {
+        cleanPayload.description = ''
+      }
+    }
+    if (payload.timeStart) cleanPayload.timeStart = payload.timeStart
+    if (payload.timeEnd) cleanPayload.timeEnd = payload.timeEnd
+    if (payload.active !== undefined) cleanPayload.active = payload.active
+
+    const res = await fetch(`${API_BASE_URL}/products/price-headers/${priceHeaderId}`, {
+      method: 'PUT',
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(cleanPayload),
+    })
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(text || `Failed to update price header: ${res.status} ${res.statusText}`)
+    }
+
+    const result = await res.json().catch(() => ({}))
+    return result.data ?? result
+  }
+
   static async bulkAddPricesToHeader(priceHeaderId: number, items: Array<{ productUnitId: number; price: number; productCode?: string }>): Promise<any[]> {
     const url = `${API_BASE_URL}/products/price-headers/${priceHeaderId}/prices/bulk`
 
