@@ -26,6 +26,28 @@ export interface ErrorResponse {
   timestamp: number
 }
 
+export interface RegisterRequest {
+  fullName: string
+  email: string
+  password: string
+  phoneNumber: string
+}
+
+export interface ActivateUserRequest {
+  email: string
+  otp: string
+}
+
+export interface ForgotPasswordRequest {
+  email: string
+}
+
+export interface ResetPasswordRequest {
+  email: string
+  otp: string
+  newPassword: string
+}
+
 export class AuthService {
   // Login user
   static async login(credentials: LoginRequest): Promise<LoginResponse> {
@@ -96,6 +118,70 @@ export class AuthService {
     } catch (error) {
       console.error('Logout error:', error)
       // Don't throw error for logout - user should be logged out locally anyway
+    }
+  }
+
+  // Register new user (default role USER)
+  static async register(payload: RegisterRequest): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.message || 'Đăng ký thất bại')
+    }
+  }
+
+  // Activate user with OTP
+  static async activateUser(payload: ActivateUserRequest): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/users/activate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.message || 'Kích hoạt tài khoản thất bại')
+    }
+  }
+
+  // Request forgot password OTP
+  static async forgotPassword(payload: ForgotPasswordRequest): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/users/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.message || 'Gửi OTP đổi mật khẩu thất bại')
+    }
+  }
+
+  // Reset password with OTP
+  static async resetPassword(payload: ResetPasswordRequest): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/users/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.message || 'Đặt lại mật khẩu thất bại')
     }
   }
 
