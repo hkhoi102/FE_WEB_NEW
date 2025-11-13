@@ -24,6 +24,7 @@ const Login = () => {
   const [registerError, setRegisterError] = useState('')
   const [registerMessage, setRegisterMessage] = useState('')
   const [registerLoading, setRegisterLoading] = useState(false)
+  const [registerResendLoading, setRegisterResendLoading] = useState(false)
   const [forgotStep, setForgotStep] = useState<'email' | 'otp' | 'success'>('email')
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotOtp, setForgotOtp] = useState('')
@@ -78,6 +79,7 @@ const Login = () => {
     setRegisterError('')
     setRegisterMessage('')
     setRegisterLoading(false)
+    setRegisterResendLoading(false)
   }
 
   const resetForgotState = () => {
@@ -144,6 +146,25 @@ const Login = () => {
       setRegisterError(err instanceof Error ? err.message : 'Kích hoạt tài khoản thất bại')
     } finally {
       setRegisterLoading(false)
+    }
+  }
+
+  const handleResendOtp = async () => {
+    if (!registerForm.email) {
+      setRegisterError('Không tìm thấy email đăng ký, vui lòng nhập lại.')
+      return
+    }
+
+    try {
+      setRegisterError('')
+      setRegisterMessage('')
+      setRegisterResendLoading(true)
+      await AuthService.resendOtp({ email: registerForm.email })
+      setRegisterMessage('OTP mới đã được gửi. Vui lòng kiểm tra email của bạn.')
+    } catch (err) {
+      setRegisterError(err instanceof Error ? err.message : 'Không thể gửi lại OTP')
+    } finally {
+      setRegisterResendLoading(false)
     }
   }
 
@@ -414,6 +435,14 @@ const Login = () => {
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {registerLoading ? 'Đang kích hoạt...' : 'Kích hoạt tài khoản'}
+            </button>
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={registerResendLoading}
+              className="w-full justify-center rounded-md border border-primary-200 bg-white px-4 py-2 text-sm font-medium text-primary-600 shadow-sm transition hover:border-primary-300 hover:bg-primary-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {registerResendLoading ? 'Đang gửi lại OTP...' : 'Gửi lại OTP'}
             </button>
           </form>
         )}

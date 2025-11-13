@@ -48,6 +48,10 @@ export interface ResetPasswordRequest {
   newPassword: string
 }
 
+export interface ResendOtpRequest {
+  email: string
+}
+
 export class AuthService {
   // Login user
   static async login(credentials: LoginRequest): Promise<LoginResponse> {
@@ -150,6 +154,22 @@ export class AuthService {
     if (!response.ok) {
       const data = await response.json().catch(() => ({}))
       throw new Error(data.message || 'Kích hoạt tài khoản thất bại')
+    }
+  }
+
+  // Resend activation OTP
+  static async resendOtp(payload: ResendOtpRequest): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/users/resend-otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.message || 'Không thể gửi lại OTP')
     }
   }
 
