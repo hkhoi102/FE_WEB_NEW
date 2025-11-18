@@ -4,7 +4,7 @@ import { CategoryService, type Category } from '@/services/categoryService'
 interface CategoryMenuProps {
   initialActive?: number
   activeCategory?: string
-  onSelect?: (category: Category) => void
+  onSelect?: (category: Category | null) => void
 }
 
 const CategoryMenu = ({ initialActive = 1, activeCategory, onSelect }: CategoryMenuProps) => {
@@ -93,37 +93,60 @@ const CategoryMenu = ({ initialActive = 1, activeCategory, onSelect }: CategoryM
       </div>
       <ul className="py-2">
         {categories.length > 0 ? (
-          categories.map((category, idx) => {
-            const isSelected = activeCategory === category.name
-            const isHovered = hoverIndex === idx
-            const isActive = isSelected || (!activeCategory && initialActive >= 0 && idx === initialActive)
+          <>
+            <li>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  onSelect && onSelect(null)
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
+                  !activeCategory
+                    ? 'bg-primary-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className={`${!activeCategory ? 'text-white' : 'text-primary-600'}`}>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="9" strokeWidth="2" />
+                  </svg>
+                </span>
+                <span>Tất cả</span>
+              </button>
+            </li>
+            {categories.map((category, idx) => {
+              const isSelected = activeCategory === category.name
+              const isHovered = hoverIndex === idx
+              const isActive = isSelected || (!activeCategory && initialActive >= 0 && idx === initialActive)
 
-            return (
-              <li key={category.id}>
-                <button
-                  type="button"
-                  onMouseEnter={() => setHoverIndex(idx)}
-                  onMouseLeave={() => setHoverIndex(null)}
-                  onClick={(e) => {
-                    e.preventDefault()
-                    onSelect && onSelect(category)
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
-                    isActive
-                      ? 'bg-primary-600 text-white'
-                      : isHovered
-                      ? 'bg-primary-50 text-primary-700'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <span className={`${isActive ? 'text-white' : 'text-primary-600'}`}>
-                    {getCategoryIcon(category.name)}
-                  </span>
-                  <span>{category.name}</span>
-                </button>
-              </li>
-            )
-          })
+              return (
+                <li key={category.id}>
+                  <button
+                    type="button"
+                    onMouseEnter={() => setHoverIndex(idx)}
+                    onMouseLeave={() => setHoverIndex(null)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      onSelect && onSelect(category)
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors ${
+                      isActive
+                        ? 'bg-primary-600 text-white'
+                        : isHovered
+                        ? 'bg-primary-50 text-primary-700'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className={`${isActive ? 'text-white' : 'text-primary-600'}`}>
+                      {getCategoryIcon(category.name)}
+                    </span>
+                    <span>{category.name}</span>
+                  </button>
+                </li>
+              )
+            })}
+          </>
         ) : (
           <li className="px-4 py-3 text-gray-500 text-sm text-center">
             Chưa có danh mục nào

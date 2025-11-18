@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useCart } from '../contexts/CartContext'
 import { useUserAuth } from '../contexts/UserAuthContext'
+import { useWishlist } from '@/contexts/WishlistContext'
 import { ProductService, type Product, type ProductUnit } from '@/services/productService'
 import { ChatWidget } from '@/components'
 
@@ -14,6 +15,7 @@ const Layout = ({ children }: LayoutProps) => {
   const navigate = useNavigate()
   const [_searchParams] = useSearchParams()
   const { state: cartState } = useCart()
+  const { items: wishlistItems } = useWishlist()
   const { user, isAuthenticated, logout } = useUserAuth()
   // Categories dropdown removed
   const [headerSearchTerm, setHeaderSearchTerm] = useState<string>('')
@@ -206,9 +208,14 @@ const Layout = ({ children }: LayoutProps) => {
                   </Link>
                 )}
               </div>
-              <Link to="/wishlist" className="hidden md:flex items-center gap-2 text-gray-700 hover:text-primary-600">
+              <Link to="/wishlist" className="hidden md:flex items-center gap-2 text-gray-700 hover:text-primary-600 relative">
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                <span className="text-sm">Yêu thích</span>
+
+                {wishlistItems.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {wishlistItems.length > 99 ? '99+' : wishlistItems.length}
+                  </span>
+                )}
               </Link>
               <Link to="/cart" className="relative text-gray-700 hover:text-primary-600">
                 <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l3-8H6.4M7 13L5.4 5M7 13l-2 9m12-9l2 9M9 22a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z"/></svg>

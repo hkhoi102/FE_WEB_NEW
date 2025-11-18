@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from '@/contexts/AuthContext'
 import { UserAuthProvider } from '@/contexts/UserAuthContext'
 import { CartProvider } from '@/contexts/CartContext'
+import { WishlistProvider } from '@/contexts/WishlistContext'
 import { Layout, ProtectedRoute, CustomerProtectedRoute } from '@/components'
 import Home from '@/pages/Home'
 import About from '@/pages/About'
@@ -16,6 +17,7 @@ import Login from '@/pages/Login'
 import Admin from '@/pages/Admin'
 import PromotionDetail from '@/pages/PromotionDetail'
 import ReturnOrderPage from '@/pages/ReturnOrderPage'
+import WishlistPage from '@/pages/Wishlist'
 // InventoryCheckCreate is rendered inside Admin when tab=inventory-check-create
 import InventoryImportExportDetail from '@/components/InventoryImportExportDetail'
 import { setupHttpInterceptors } from '@/utils/httpInterceptor'
@@ -27,8 +29,9 @@ function App() {
     <UserAuthProvider>
       <AuthProvider>
         <CartProvider>
-          <Router>
-            <Routes>
+          <WishlistProvider>
+            <Router>
+              <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/user-login" element={<Navigate to="/login" replace />} />
@@ -41,6 +44,7 @@ function App() {
               <Route path="/products" element={<Layout><Products /></Layout>} />
               <Route path="/product/:id" element={<Layout><ProductDetail /></Layout>} />
               <Route path="/cart" element={<Layout><Cart /></Layout>} />
+              <Route path="/wishlist" element={<Layout><WishlistPage /></Layout>} />
 
               {/* Protected customer routes - login required for checkout and orders */}
               <Route path="/checkout" element={<CustomerProtectedRoute><Layout><Checkout /></Layout></CustomerProtectedRoute>} />
@@ -112,8 +116,9 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-            </Routes>
-          </Router>
+              </Routes>
+            </Router>
+          </WishlistProvider>
         </CartProvider>
       </AuthProvider>
     </UserAuthProvider>

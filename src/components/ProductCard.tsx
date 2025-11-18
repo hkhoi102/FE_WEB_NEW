@@ -6,12 +6,14 @@ import QuickViewModal from './QuickViewModal'
 import xaFallback from '@/images/xa.webp'
 
 interface ProductCardProps extends HTMLAttributes<HTMLDivElement> {
-  product: Product & { imageUrl?: string; originalPrice?: number }
+  product: Product & { imageUrl?: string | null; originalPrice?: number }
+  onAddToCartSuccess?: (product: Product) => void
 }
 
 const ProductCard = ({
   product,
   className = '',
+  onAddToCartSuccess,
   ...props
 }: ProductCardProps) => {
   const { addToCart } = useCart()
@@ -60,6 +62,10 @@ const ProductCard = ({
 
   // Show unit count if multiple units (should be 1 now since we expanded)
   const unitCount = product.productUnits?.length || 0
+
+  const quickViewProduct = product.imageUrl === null
+    ? { ...product, imageUrl: undefined }
+    : product
 
   return (
     <>
@@ -144,6 +150,7 @@ const ProductCard = ({
           onClick={() => {
             if (!hasPrice || isOutOfStock) return
             addToCart(product)
+            onAddToCartSuccess?.(product)
           }}
           disabled={!hasPrice || isOutOfStock}
           className={`mt-2 w-full text-white text-sm py-2 rounded-lg transition-colors ${(!hasPrice || isOutOfStock) ? 'bg-gray-300 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'}`}
@@ -155,7 +162,7 @@ const ProductCard = ({
 
     {/* Quick View Modal */}
     <QuickViewModal
-      product={product}
+      product={quickViewProduct}
       isOpen={isQuickViewOpen}
       onClose={() => setIsQuickViewOpen(false)}
     />

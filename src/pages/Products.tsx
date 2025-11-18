@@ -8,7 +8,8 @@ import { PageTransition } from '../components'
 
 const Products: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
-  const [selectedCategory, setSelectedCategory] = useState<{ id: number; name: string } | null>(null)
+  const [selectedCategory, setSelectedCategory] = useState<{ id?: number; rawId?: string; name: string } | null>(null)
+  const [filtersReady, setFiltersReady] = useState(false)
   const [sortBy, setSortBy] = useState<'name' | 'price'>('name')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [priceRange, setPriceRange] = useState({ min: '', max: '' })
@@ -37,19 +38,25 @@ const Products: React.FC = () => {
     // Scroll to top when opening Products page
     window.scrollTo({ top: 0, behavior: 'smooth' })
     const urlSearchTerm = searchParams.get('search')
-    const urlCategoryId = searchParams.get('categoryId')
+    const urlCategoryId = searchParams.get('categoryId') || undefined
     const urlCategoryName = searchParams.get('category')
 
     if (urlSearchTerm) {
       setSearchTerm(urlSearchTerm)
       setSelectedCategory(null) // Clear category filter when searching from header
+    } else if (!urlCategoryName) {
+      setSearchTerm('')
     }
 
     if (urlCategoryName) {
-      const parsedId = urlCategoryId ? parseInt(urlCategoryId) : 0
-      setSelectedCategory({ id: isNaN(parsedId) ? 0 : parsedId, name: urlCategoryName })
-      setSearchTerm('') // Clear search when filtering by category
+      const parsedId = urlCategoryId ? Number(urlCategoryId) : undefined
+      const numericId = parsedId !== undefined && !Number.isNaN(parsedId) ? parsedId : undefined
+      setSelectedCategory({ id: numericId, rawId: urlCategoryId, name: urlCategoryName })
+    } else if (!urlSearchTerm) {
+      setSelectedCategory(null)
     }
+
+    setFiltersReady(true)
   }, [searchParams])
 
   // Get price from product (works with both expanded and non-expanded products)
@@ -62,6 +69,24 @@ const Products: React.FC = () => {
       return unit.currentPrice ?? unit.convertedPrice ?? 0
     }
     return 0
+  }
+
+  const categoryMatches = (product: any): boolean => {
+    if (!selectedCategory) return true
+    const productCategoryId = product.categoryId ?? product.category_id ?? product.category?.id
+    const productCategoryIdStr = productCategoryId != null ? String(productCategoryId) : undefined
+    const selectedRawId = selectedCategory.rawId ?? (selectedCategory.id != null ? String(selectedCategory.id) : undefined)
+    const matchesId = selectedRawId && productCategoryIdStr ? productCategoryIdStr === selectedRawId : false
+    const productCategoryName = product.categoryName ?? product.category?.name
+    const matchesName = selectedCategory.name
+      ? (productCategoryName || '').toLowerCase() === selectedCategory.name.toLowerCase()
+      : false
+    return matchesId || matchesName
+  }
+
+  const filterByCategory = (products: any[]): any[] => {
+    if (!selectedCategory) return products
+    return products.filter(categoryMatches)
   }
 
   // Filter products by price range
@@ -102,10 +127,13 @@ const Products: React.FC = () => {
 
   // Fetch products from API
   const loadProducts = async () => {
+    if (!filtersReady) return
+
     setLoading(true)
     setError(null)
     try {
       const pageSize = 20
+      const categoryIdForApi = selectedCategory?.id && !Number.isNaN(selectedCategory.id) ? selectedCategory.id : undefined
       if (searchTerm) {
         // Dùng endpoint search khi có từ khóa để đảm bảo độ chính xác
         // Load all results for client-side sorting and expansion
@@ -125,7 +153,8 @@ const Products: React.FC = () => {
         })
 
         // Apply price range filter
-        const filteredResults = filterByPriceRange(expandedResults)
+        const categoryFiltered = filterByCategory(expandedResults)
+        const filteredResults = filterByPriceRange(categoryFiltered)
 
         // Apply sorting to filtered products
         const sortedResults = sortProducts(filteredResults)
@@ -157,7 +186,7 @@ const Products: React.FC = () => {
               page + 1,
               100, // Load 100 per page to minimize API calls
               undefined,
-              selectedCategory?.id
+              categoryIdForApi
             )
 
             allProducts.push(...response.products)
@@ -182,7 +211,8 @@ const Products: React.FC = () => {
             return [product]
           })
 
-          const filteredResults = filterByPriceRange(expandedResults)
+          const categoryFiltered = filterByCategory(expandedResults)
+          const filteredResults = filterByPriceRange(categoryFiltered)
           const sortedResults = sortProducts(filteredResults)
 
           // Pagination after filtering
@@ -204,12 +234,14 @@ const Products: React.FC = () => {
             currentPage,
             pageSize,
             undefined,
-            selectedCategory?.id
+            categoryIdForApi
           )
 
+          const categoryFiltered = filterByCategory(response.products)
+
           setProductsData({
-            products: response.products,
-            totalCount: response.pagination.total_items,
+            products: categoryFiltered,
+            totalCount: categoryFiltered.length,
             currentPage: response.pagination.current_page,
             totalPages: response.pagination.total_pages,
             hasNextPage: response.pagination.current_page < response.pagination.total_pages,
@@ -245,7 +277,7 @@ const Products: React.FC = () => {
   useEffect(() => {
     loadProducts()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, selectedCategory, searchTerm, priceRange.min, priceRange.max, sortBy, sortOrder])
+  }, [filtersReady, currentPage, selectedCategory, searchTerm, priceRange.min, priceRange.max, sortBy, sortOrder])
 
   // Reset to page 1 when filters or sort change
   useEffect(() => {
@@ -253,11 +285,22 @@ const Products: React.FC = () => {
   }, [selectedCategory, searchTerm, priceRange.min, priceRange.max, sortBy, sortOrder])
 
 
-  const handleCategorySelect = (category: { id: number; name: string }) => {
-    setSelectedCategory(category)
+  const handleCategorySelect = (category: { id?: number; name: string } | null) => {
+    if (!category) {
+      setSelectedCategory(null)
+      setCurrentPage(1)
+      setSearchParams({})
+      return
+    }
+
+    setSelectedCategory({ id: category.id, rawId: category.id != null ? String(category.id) : undefined, name: category.name })
     setCurrentPage(1)
     // Update URL params
-    setSearchParams({ categoryId: category.id.toString(), category: category.name })
+    const params: Record<string, string> = { category: category.name }
+    if (category.id != null) {
+      params.categoryId = String(category.id)
+    }
+    setSearchParams(params)
   }
 
 

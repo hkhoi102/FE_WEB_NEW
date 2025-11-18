@@ -1,17 +1,20 @@
 import React, { useState } from 'react'
 import { Product } from '../services/productService'
 import { useCart } from '../contexts/CartContext'
+import { useWishlist } from '@/contexts/WishlistContext'
 import xaFallback from '@/images/xa.webp'
 
 interface QuickViewModalProps {
-  product: Product & { imageUrl?: string; originalPrice?: number }
+  product: Product & { imageUrl?: string | null; originalPrice?: number }
   isOpen: boolean
   onClose: () => void
 }
 
 const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClose }) => {
   const { addToCart } = useCart()
+  const { toggleWishlist, isInWishlist } = useWishlist()
   const [quantity, setQuantity] = useState(1)
+  const isFavorite = isInWishlist(product.id)
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -57,6 +60,10 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
       addToCart(product)
     }
     onClose()
+  }
+
+  const handleToggleWishlist = () => {
+    toggleWishlist(product)
   }
 
   const handleQuantityChange = (newQuantity: number) => {
@@ -207,8 +214,13 @@ const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClos
                 </svg>
               </button>
 
-              <button className="w-12 h-12 border border-gray-300 rounded-lg flex items-center justify-center hover:bg-gray-50 text-gray-600">
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <button
+                onClick={handleToggleWishlist}
+                className={`w-12 h-12 border rounded-lg flex items-center justify-center transition-colors ${isFavorite ? 'border-green-300 bg-green-50 text-green-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50'}`}
+                aria-pressed={isFavorite}
+                title={isFavorite ? 'Bỏ khỏi yêu thích' : 'Thêm vào yêu thích'}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                 </svg>
               </button>
