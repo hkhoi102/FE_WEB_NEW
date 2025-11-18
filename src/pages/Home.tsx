@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { CategoryCard, ProductCard, SectionHeader, PromoCard, TestimonialCard, PageTransition } from '@/components'
 import { CategoryService, type Category } from '@/services/categoryService'
 import { ProductService, type Product } from '@/services/productService'
-import { ReviewService, type ReviewItem } from '@/services/reviewService'
+import type { ReviewItem } from '@/services/reviewService'
 import bannerImg from '@/images/Bannar_Big-removebg-preview.png'
 import freshFruit from '@/images/fresh_fruit.png'
 import snacksImg from '@/images/snacks.png'
@@ -27,6 +27,14 @@ const categoryImageMap: Record<string, string> = {
   'Bread': breadBakeryImg,
 }
 
+const mockReviews: ReviewItem[] = [
+  { id: 1, name: 'Ngọc Anh', role: 'Khách hàng', quote: 'Sản phẩm tươi ngon, giao hàng rất nhanh và đúng giờ. Mình sẽ tiếp tục ủng hộ!' },
+  { id: 2, name: 'Minh Tuấn', role: 'Khách hàng', quote: 'Giá cả hợp lý, nhiều khuyến mãi. Nhân viên hỗ trợ nhiệt tình.' },
+  { id: 3, name: 'Thu Hà', role: 'Khách hàng', quote: 'Rau củ rất tươi, đóng gói cẩn thận. Rất hài lòng với chất lượng.' },
+  { id: 4, name: 'Quốc Khánh', role: 'Khách hàng', quote: 'Đặt là có trong 2 giờ. Dịch vụ nhanh và chuyên nghiệp.' },
+  { id: 5, name: 'Hồng Nhung', role: 'Khách hàng', quote: 'Thanh toán tiện, tích điểm thành viên nhiều ưu đãi.' },
+]
+
 const Home = () => {
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -43,21 +51,21 @@ const Home = () => {
         setError(null)
 
         // Load categories and products in parallel
-        const [categoriesData, productsResponse, reviewsData] = await Promise.all([
+        const [categoriesData, productsResponse] = await Promise.all([
           CategoryService.getCategories(),
-          ProductService.getProducts(1, 10),
-          ReviewService.getTopReviews(5)
+          ProductService.getProducts(1, 10)
         ])
 
         setCategories(categoriesData)
         setProducts(productsResponse.products)
-        setReviews(reviewsData)
+        setReviews(mockReviews)
         setReviewPage(0)
       } catch (err) {
         console.error('Error fetching data:', err)
         setError('Không thể tải dữ liệu')
         setCategories([])
         setProducts([])
+        setReviews(mockReviews)
       } finally {
         setLoading(false)
       }

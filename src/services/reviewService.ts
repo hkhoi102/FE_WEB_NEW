@@ -1,4 +1,5 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const CUSTOM_REVIEWS_ENDPOINT = import.meta.env.VITE_REVIEWS_ENDPOINT
 
 function authHeaders(): HeadersInit {
   const userToken = localStorage.getItem('user_access_token')
@@ -28,8 +29,19 @@ const fallbackReviews: ReviewItem[] = [
 
 export const ReviewService = {
   async getTopReviews(limit: number = 5): Promise<ReviewItem[]> {
+    const endpoint = CUSTOM_REVIEWS_ENDPOINT && CUSTOM_REVIEWS_ENDPOINT.trim().length > 0
+      ? CUSTOM_REVIEWS_ENDPOINT.trim()
+      : null
+
+    if (!endpoint) {
+      return fallbackReviews.slice(0, limit)
+    }
+
     try {
-      const res = await fetch(`${API_BASE_URL}/reviews?limit=${encodeURIComponent(limit)}` as string, {
+      const url = new URL(endpoint, window.location.origin)
+      url.searchParams.set('limit', String(limit))
+
+      const res = await fetch(String(url), {
         headers: authHeaders(),
       })
       if (!res.ok) return fallbackReviews.slice(0, limit)
