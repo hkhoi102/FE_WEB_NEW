@@ -1,4 +1,3 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const CUSTOM_REVIEWS_ENDPOINT = import.meta.env.VITE_REVIEWS_ENDPOINT
 
 function authHeaders(): HeadersInit {
