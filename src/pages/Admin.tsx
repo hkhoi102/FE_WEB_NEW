@@ -2,7 +2,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useEffect, useState, useMemo } from 'react'
 import { ProductService, Product, ProductCategory, ProductUnit, CreateProductRequest, UpdateProductRequest } from '@/services/productService'
-import { InventoryService, WarehouseDto, StockLocationDto } from '@/services/inventoryService'
 import { AnalyticsService } from '@/services/analyticsService'
 import { Pagination, ProductTable, ProductFormWithUnitsAndPrices, Modal, UnitManagement, PriceManagement, AccountManagement, InventoryManagement, InventoryCheckManagement, WarehouseTab, PromotionManagement, OrderManagement, OrderProcessingManagement, OrderListManagement, AdminSidebar, WarehouseStatsPage, RevenuePage, ProductStatsPage } from '@/components'
 import CreateOrderManagement from '@/components/CreateOrderManagement'
@@ -60,12 +59,13 @@ const Admin = () => {
   })
   type TabType = 'overview' | 'management' | 'products' | 'categories' | 'units' | 'prices' | 'inventory' | 'inventory-management' | 'inventory-import-export' | 'inventory-import-export-list' | 'inventory-check-create' | 'inventory-check' | 'warehouses' | 'warehouse-list' | 'warehouse-history' | 'accounts' | 'promotions' | 'orders' | 'order-processing' | 'order-list' | 'return-processing' | 'returned-orders' | 'create-order' | 'statistics' | 'revenue' | 'warehouse-stats' | 'product-stats'
 
+  const isManager = user?.role === 'MANAGER'
   const [currentTab, setCurrentTab] = useState<TabType>(
     (tab as TabType) ||
     (isInventoryCheckCreate ? 'inventory-check-create' :
      isPriceManagement ? 'prices' :
      isPriceHeaderDetail ? 'prices' :
-     isReturnOrder ? 'return-processing' : 'overview')
+     isReturnOrder ? 'return-processing' : (isManager ? 'warehouse-list' : 'overview'))
   )
 
   const handleTabChange = (next: TabType) => {
@@ -89,11 +89,31 @@ const Admin = () => {
       setCurrentTab('return-processing')
     } else if (tab) {
       setCurrentTab(tab as TabType)
-    } else if (!tab && currentTab !== 'overview' && location.pathname === '/admin') {
-      setCurrentTab('overview')
+    } else if (!tab && location.pathname === '/admin') {
+      if (user?.role === 'MANAGER') {
+        if (currentTab !== 'warehouse-list') {
+          setCurrentTab('warehouse-list')
+        }
+      } else {
+        if (currentTab !== 'overview') {
+          setCurrentTab('overview')
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname, tab])
+  }, [location.pathname, tab, user?.role])
+
+  // Redirect MANAGER away from restricted tabs
+  useEffect(() => {
+    if (user?.role === 'MANAGER') {
+      const restrictedTabs: TabType[] = ['overview', 'inventory-import-export-list', 'statistics', 'revenue', 'warehouse-stats', 'product-stats']
+      if (restrictedTabs.includes(currentTab)) {
+        navigate('/admin/warehouse-list', { replace: true })
+        setCurrentTab('warehouse-list')
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTab, user?.role, navigate])
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -121,13 +141,6 @@ const Admin = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [detailProduct, setDetailProduct] = useState<Product | null>(null)
 
-  // Import/Upload modals
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
-  const [importFile, setImportFile] = useState<File | null>(null)
-  const [importWarehouseId, setImportWarehouseId] = useState<string>('')
-  const [importStockLocationId, setImportStockLocationId] = useState<string>('')
-  const [warehouses, setWarehouses] = useState<WarehouseDto[]>([])
-  const [stockLocations, setStockLocations] = useState<StockLocationDto[]>([])
 
 
 
@@ -160,12 +173,6 @@ const Admin = () => {
     }
   }, [isAuthenticated])
 
-  // Preload warehouses and locations for import modal
-  useEffect(() => {
-    InventoryService.getWarehouses()
-      .then(setWarehouses)
-      .catch(() => setWarehouses([]))
-  }, [])
   // preload units when needed
   useEffect(() => {
     if (!unitModalOpen) return
@@ -195,13 +202,6 @@ const Admin = () => {
     // Always reset isDefault when opening (avoid setting new default if one exists)
     setUnitForm(prev => ({ ...prev, isDefault: false }))
   }, [unitModalOpen])
-
-  useEffect(() => {
-    const wid = importWarehouseId ? Number(importWarehouseId) : undefined
-    InventoryService.getStockLocations(wid)
-      .then(setStockLocations)
-      .catch(() => setStockLocations([]))
-  }, [importWarehouseId])
 
   // Calculate stats when categories and products change
   useEffect(() => {
@@ -860,13 +860,6 @@ const Admin = () => {
                         </select>
                       </div>
                       <button
-                        onClick={() => setIsImportModalOpen(true)}
-                        className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-md text-sm font-medium"
-                      >
-                        Import sản phẩm
-                      </button>
-
-                      <button
                         onClick={handleAddProduct}
                         className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
                       >
@@ -931,7 +924,7 @@ const Admin = () => {
             <InventoryImportExportCreate />
           )}
 
-          {currentTab === 'inventory-import-export-list' && (
+          {currentTab === 'inventory-import-export-list' && user?.role !== 'MANAGER' && (
             <InventoryImportExportList />
           )}
 
@@ -997,15 +990,15 @@ const Admin = () => {
             </div>
           )}
 
-          {currentTab === 'revenue' && (
+          {currentTab === 'revenue' && user?.role !== 'MANAGER' && (
             <RevenuePage />
           )}
 
-          {currentTab === 'warehouse-stats' && (
+          {currentTab === 'warehouse-stats' && user?.role !== 'MANAGER' && (
             <WarehouseStatsPage />
           )}
 
-          {currentTab === 'product-stats' && (
+          {currentTab === 'product-stats' && user?.role !== 'MANAGER' && (
             <ProductStatsPage />
           )}
       </main>
@@ -1461,86 +1454,6 @@ const Admin = () => {
           </div>
         </form>
       </Modal>
-
-
-      {/* Import Products Modal */}
-      <Modal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        title="Import sản phẩm từ Excel"
-        size="md"
-      >
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault()
-            if (!importFile) {
-              openNotify('Thiếu file', 'Vui lòng chọn tệp Excel (.xlsx, .xls)', 'error')
-              return
-            }
-            try {
-              const result = await ProductService.importProductsExcel(importFile, {
-                warehouseId: importWarehouseId ? Number(importWarehouseId) : undefined,
-                stockLocationId: importStockLocationId ? Number(importStockLocationId) : undefined,
-              })
-              setIsImportModalOpen(false)
-              setImportFile(null)
-              setImportWarehouseId('')
-              setImportStockLocationId('')
-              await loadProducts()
-              openNotify('Import thành công', `Tổng: ${result.totalRows}, Thành công: ${result.successCount}, Lỗi: ${result.errorCount}`, 'success')
-            } catch (err) {
-              openNotify('Import thất bại', 'Không thể import. Kiểm tra định dạng file hoặc dữ liệu.', 'error')
-            }
-          }}
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Chọn tệp Excel</label>
-              <input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">Định dạng hỗ trợ: .xlsx, .xls. Cột mẫu: name, description, categoryId, ...</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Kho (Warehouse)</label>
-                <select
-                  value={importWarehouseId}
-                  onChange={(e) => setImportWarehouseId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                >
-                  <option value="">-- Chọn kho (tùy chọn) --</option>
-                  {warehouses.map(w => (
-                    <option key={w.id} value={w.id}>{w.name || `Kho #${w.id}`}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Vị trí tồn (Stock location)</label>
-                <select
-                  value={importStockLocationId}
-                  onChange={(e) => setImportStockLocationId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                >
-                  <option value="">-- Chọn vị trí (tùy chọn) --</option>
-                  {stockLocations.map(sl => (
-                    <option key={sl.id} value={sl.id}>{sl.name || `Vị trí #${sl.id}`} {sl.warehouseId ? `(Kho ${sl.warehouseId})` : ''}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-          <div className="mt-6 flex justify-end gap-2">
-            <button type="button" onClick={() => setIsImportModalOpen(false)} className="px-4 py-2 rounded-md border text-gray-700">Hủy</button>
-            <button type="submit" className="px-4 py-2 rounded-md text-white bg-gray-700 hover:bg-gray-800">Import</button>
-          </div>
-        </form>
-      </Modal>
-
-
 
       {/* Notification Modal */}
       <Modal

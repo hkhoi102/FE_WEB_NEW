@@ -5,6 +5,7 @@ interface UserAuthContextType {
   user: UserInfo | null
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
+  refreshUser: () => Promise<void>
   isAuthenticated: boolean
   isLoading: boolean
   accessToken: string | null
@@ -86,10 +87,24 @@ export const UserAuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const refreshUser = async () => {
+    const savedAccessToken = localStorage.getItem('user_access_token')
+    if (!savedAccessToken) return
+
+    try {
+      const userData = await AuthService.getCurrentUser(savedAccessToken)
+      setUser(userData)
+      localStorage.setItem('user_info', JSON.stringify(userData))
+    } catch (error) {
+      console.error('Error refreshing user data:', error)
+    }
+  }
+
   const value = {
     user,
     login,
     logout,
+    refreshUser,
     isAuthenticated: !!user,
     isLoading,
     accessToken,

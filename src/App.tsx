@@ -13,6 +13,7 @@ import Cart from '@/pages/Cart'
 import Checkout from '@/pages/Checkout'
 import Payment from '@/pages/Payment'
 import MyOrders from '@/pages/MyOrders'
+import UserProfile from '@/pages/UserProfile'
 import Login from '@/pages/Login'
 import Admin from '@/pages/Admin'
 import PromotionDetail from '@/pages/PromotionDetail'
@@ -50,6 +51,7 @@ function App() {
               <Route path="/checkout" element={<CustomerProtectedRoute><Layout><Checkout /></Layout></CustomerProtectedRoute>} />
               <Route path="/payment/:orderId" element={<CustomerProtectedRoute><Layout><Payment /></Layout></CustomerProtectedRoute>} />
               <Route path="/my-orders" element={<CustomerProtectedRoute><Layout><MyOrders /></Layout></CustomerProtectedRoute>} />
+              <Route path="/profile" element={<CustomerProtectedRoute><Layout><UserProfile /></Layout></CustomerProtectedRoute>} />
 
               {/* Admin routes */}
               <Route

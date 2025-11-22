@@ -52,6 +52,16 @@ export interface ResendOtpRequest {
   email: string
 }
 
+export interface UpdateProfileRequest {
+  fullName: string
+  phoneNumber: string
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+}
+
 export class AuthService {
   // Login user
   static async login(credentials: LoginRequest): Promise<LoginResponse> {
@@ -202,6 +212,42 @@ export class AuthService {
     if (!response.ok) {
       const data = await response.json().catch(() => ({}))
       throw new Error(data.message || 'Đặt lại mật khẩu thất bại')
+    }
+  }
+
+  // Update user profile
+  static async updateProfile(accessToken: string, payload: UpdateProfileRequest): Promise<UserInfo> {
+    const response = await fetch(`${API_BASE_URL}/users/me`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.message || 'Cập nhật thông tin thất bại')
+    }
+
+    return response.json()
+  }
+
+  // Change password
+  static async changePassword(accessToken: string, payload: ChangePasswordRequest): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/users/me/change-password`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.message || 'Đổi mật khẩu thất bại')
     }
   }
 

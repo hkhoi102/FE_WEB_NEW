@@ -190,7 +190,13 @@ const Layout = ({ children }: LayoutProps) => {
                 {isAuthenticated ? (
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-gray-700">
-                      Xin chào, <span className="font-medium">{user?.fullName}</span>
+                      Xin chào,{' '}
+                      <Link
+                        to="/profile"
+                        className="font-medium hover:text-primary-600 transition-colors"
+                      >
+                        {user?.fullName}
+                      </Link>
                     </span>
                     <button
                       onClick={logout}
@@ -247,7 +253,7 @@ const Layout = ({ children }: LayoutProps) => {
               ))}
             </nav>
 
-            <span className="hidden md:inline text-sm text-gray-600">Gọi cho chúng tôi: <strong className="text-gray-900">+84 123 456 789</strong></span>
+            <span className="hidden md:inline text-sm text-gray-600">Gọi cho chúng tôi: <strong className="text-gray-900">0333741399</strong></span>
           </div>
         </div>
       </header>
@@ -279,7 +285,7 @@ const Layout = ({ children }: LayoutProps) => {
           <div>
             <h4 className="text-white font-semibold mb-3 text-sm">Thông tin liên hệ</h4>
             <div className="space-y-1 text-sm text-gray-400">
-              <p>+84 123 456 789</p>
+              <p>0333741399</p>
               <p>support@smartweb.vn</p>
             </div>
           </div>
