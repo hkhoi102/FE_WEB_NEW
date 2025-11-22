@@ -117,7 +117,7 @@ export default function UserProfile() {
       ) {
         setPasswordError('Mật khẩu hiện tại sai')
       } else {
-        setPasswordError(errorMessage || 'Đổi mật khẩu thất bại')
+        setPasswordError(errorMessage || 'Đổi mật khẩu thất bại mật khẩu hiện tại sai')
       }
     } finally {
       setPasswordLoading(false)
