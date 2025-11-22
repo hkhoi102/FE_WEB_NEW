@@ -102,7 +102,23 @@ export default function UserProfile() {
         navigate('/login', { replace: true })
       }, 1500) // Hiển thị thông báo thành công 1.5 giây trước khi đăng xuất
     } catch (error: any) {
-      setPasswordError(error.message || 'Đổi mật khẩu thất bại')
+      // Kiểm tra nếu lỗi liên quan đến mật khẩu hiện tại sai
+      const errorMessage = error.message || ''
+      const errorMessageLower = errorMessage.toLowerCase()
+
+      if (
+        errorMessageLower.includes('mật khẩu hiện tại') ||
+        errorMessageLower.includes('current password') ||
+        errorMessageLower.includes('incorrect password') ||
+        errorMessageLower.includes('wrong password') ||
+        errorMessageLower.includes('invalid password') ||
+        errorMessageLower.includes('password không đúng') ||
+        errorMessageLower.includes('password sai')
+      ) {
+        setPasswordError('Mật khẩu hiện tại sai')
+      } else {
+        setPasswordError(errorMessage || 'Đổi mật khẩu thất bại')
+      }
     } finally {
       setPasswordLoading(false)
     }
