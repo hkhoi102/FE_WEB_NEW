@@ -228,8 +228,8 @@ const Login = () => {
       setForgotError('')
       setForgotMessage('')
       setForgotResendLoading(true)
-      await AuthService.resendOtp({ email: forgotEmail })
-      setForgotMessage('OTP mới đã được gửi. Vui lòng kiểm tra email của bạn.')
+      await AuthService.forgotPassword({ email: forgotEmail })
+      setForgotMessage('Mã OTP đặt lại mật khẩu đã được gửi tới email của bạn.')
     } catch (err) {
       setForgotError(err instanceof Error ? err.message : 'Không thể gửi lại OTP')
     } finally {
