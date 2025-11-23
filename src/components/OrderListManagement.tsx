@@ -29,8 +29,8 @@ const OrderListManagement: React.FC = () => {
   // bulk payment status controls are not used on this page (placeholder removed)
 
   // Search and filter states
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'COMPLETED' | 'CANCELLED'>('ALL')
+  const [searchTerm] = useState('')
+  const [statusFilter] = useState<'ALL' | 'COMPLETED' | 'CANCELLED'>('ALL')
   const mapBackendStatusToUI = (status: string): Order['status'] => {
     switch (status) {
       case 'PENDING': return 'PENDING'
@@ -137,11 +137,11 @@ const OrderListManagement: React.FC = () => {
   }
 
   useEffect(() => { fetchOrders() }, [])
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState<'ALL' | 'PAID' | 'UNPAID'>('ALL')
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState<'ALL' | 'COD' | 'BANK_TRANSFER' | 'CREDIT_CARD'>('ALL')
-  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' })
-  const [sortBy, setSortBy] = useState<'id' | 'created_at' | 'updated_at' | 'total_amount' | 'customer_id'>('created_at')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [paymentStatusFilter] = useState<'ALL' | 'PAID' | 'UNPAID'>('ALL')
+  const [paymentMethodFilter] = useState<'ALL' | 'COD' | 'BANK_TRANSFER' | 'CREDIT_CARD'>('ALL')
+  const [dateRange] = useState<{ start: string; end: string }>({ start: '', end: '' })
+  const [sortBy] = useState<'id' | 'created_at' | 'updated_at' | 'total_amount' | 'customer_id'>('created_at')
+  const [sortOrder] = useState<'asc' | 'desc'>('desc')
   const [statusSortOrder, setStatusSortOrder] = useState<'asc' | 'desc' | null>(null)
   const [paymentSortOrder, setPaymentSortOrder] = useState<'asc' | 'desc' | null>(null)
   const [dateSortOrder, setDateSortOrder] = useState<'asc' | 'desc' | null>(null)
