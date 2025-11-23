@@ -404,20 +404,6 @@ const OrderListManagement: React.FC = () => {
     }
   })
 
-  const handleClearFilters = () => {
-    setSearchTerm('')
-    setStatusFilter('ALL')
-    setPaymentStatusFilter('ALL')
-    setPaymentMethodFilter('ALL')
-    setDateRange({ start: '', end: '' })
-    setSortBy('created_at')
-    setSortOrder('desc')
-    setStatusSortOrder(null)
-    setPaymentSortOrder(null)
-    setDateSortOrder(null)
-    setPaymentMethodSortOrder(null)
-  }
-
   // Get order details for selected order
   const getOrderDetails = (orderId: number) => {
     return orderDetailsMap[orderId] || []
