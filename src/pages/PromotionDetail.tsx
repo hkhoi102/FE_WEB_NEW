@@ -323,6 +323,7 @@ const PromotionDetail: React.FC = () => {
 const LineDetailEditor: React.FC<{ line: any; details: any[]; onChange: (arr: any[]) => void; onClose: () => void }> = ({ line, details, onChange, onClose }) => {
   const [saving, setSaving] = useState(false)
   const [giftNameByUnitId, setGiftNameByUnitId] = useState<Record<number, string>>({})
+  const [errors, setErrors] = useState<Record<number, Record<string, string>>>({})
 
   // New states for product and unit selection
   const [products, setProducts] = useState<Array<{ id: number; name: string; productUnits: Array<{ id: number; unitName: string; unitId: number }> }>>([])
@@ -358,9 +359,31 @@ const LineDetailEditor: React.FC<{ line: any; details: any[]; onChange: (arr: an
     setSelectedProductForGift(prev => ({ ...prev, [newIdx]: 0 }))
     setSelectedUnitForCondition(prev => ({ ...prev, [newIdx]: 0 }))
     setSelectedUnitForGift(prev => ({ ...prev, [newIdx]: 0 }))
+
+    // Clear errors for new detail
+    setErrors(prev => {
+      const newErrors = { ...prev }
+      delete newErrors[newIdx]
+      return newErrors
+    })
   }
   const removeDetail = (idx: number) => {
     onChange(details.filter((_, i) => i !== idx))
+
+    // Clear errors for removed detail and shift indices
+    setErrors(prev => {
+      const newErrors: Record<number, Record<string, string>> = {}
+      Object.keys(prev).forEach(key => {
+        const numKey = Number(key)
+        if (numKey < idx) {
+          newErrors[numKey] = prev[numKey]
+        } else if (numKey > idx) {
+          newErrors[numKey - 1] = prev[numKey]
+        }
+        // Skip idx (removed detail)
+      })
+      return newErrors
+    })
 
     // Clean up selections for removed detail
     setSelectedProductForCondition(prev => {
@@ -425,6 +448,58 @@ const LineDetailEditor: React.FC<{ line: any; details: any[]; onChange: (arr: an
   }
 
   const save = async () => {
+    // Validate before saving
+    const newErrors: Record<number, Record<string, string>> = {}
+    let hasErrors = false
+
+    for (let idx = 0; idx < details.length; idx++) {
+      const d = details[idx]
+      const t = String(line?.type || '').toUpperCase()
+      const detailErrors: Record<string, string> = {}
+
+      if (t === 'DISCOUNT_PERCENT') {
+        if (!d.discountPercent || d.discountPercent === '' || Number(d.discountPercent) <= 0) {
+          detailErrors.discountPercent = 'Vui lòng nhập % giảm hợp lệ'
+          hasErrors = true
+        }
+      } else if (t === 'DISCOUNT_AMOUNT') {
+        if (!d.discountAmount || d.discountAmount === '' || Number(d.discountAmount) <= 0) {
+          detailErrors.discountAmount = 'Vui lòng nhập số tiền giảm hợp lệ'
+          hasErrors = true
+        }
+      } else if (t === 'BUY_X_GET_Y') {
+        if (!d.conditionQuantity || d.conditionQuantity === '' || Number(d.conditionQuantity) <= 0) {
+          detailErrors.conditionQuantity = 'Vui lòng nhập số lượng mua (X) hợp lệ'
+          hasErrors = true
+        }
+        if (!d.freeQuantity || d.freeQuantity === '' || Number(d.freeQuantity) <= 0) {
+          detailErrors.freeQuantity = 'Vui lòng nhập số lượng tặng (Y) hợp lệ'
+          hasErrors = true
+        }
+        const conditionUnitId = Number(d.conditionProductUnitId)
+        if (!d.conditionProductUnitId || d.conditionProductUnitId === '' || isNaN(conditionUnitId) || conditionUnitId <= 0) {
+          detailErrors.conditionProductUnitId = 'Vui lòng chọn sản phẩm và đơn vị điều kiện'
+          hasErrors = true
+        }
+        const giftUnitId = Number(d.giftProductUnitId)
+        if (!d.giftProductUnitId || d.giftProductUnitId === '' || isNaN(giftUnitId) || giftUnitId <= 0) {
+          detailErrors.giftProductUnitId = 'Vui lòng chọn sản phẩm và đơn vị quà tặng'
+          hasErrors = true
+        }
+      }
+
+      if (Object.keys(detailErrors).length > 0) {
+        newErrors[idx] = detailErrors
+      }
+    }
+
+    if (hasErrors) {
+      setErrors(newErrors)
+      return
+    }
+
+    setErrors({})
+
     setSaving(true)
     try {
       for (const d of details) {
@@ -640,17 +715,69 @@ const LineDetailEditor: React.FC<{ line: any; details: any[]; onChange: (arr: an
           {(details || []).map((d, idx) => {
             const t = String(line?.type || '').toUpperCase()
             return (
-              <div key={idx} className="grid grid-cols-12 gap-3 items-end">
+              <div key={idx} className="grid grid-cols-12 gap-3 items-start">
                 {t === 'DISCOUNT_PERCENT' && (
                   <div className="col-span-12 md:col-span-3">
-                    <div className="text-sm text-gray-700 mb-1">% giảm</div>
-                    <input placeholder="% giảm" className="w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value={d.discountPercent || ''} onChange={(e)=>onChange(details.map((x,i)=> i===idx?{...x, discountPercent:e.target.value}:x))} />
+                    <div className="text-sm text-gray-700 mb-1">% giảm <span className="text-red-500">*</span></div>
+                    <div>
+                      <input
+                        placeholder="% giảm"
+                        required
+                        className={`w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors[idx]?.discountPercent ? 'border-red-500' : ''}`}
+                        value={d.discountPercent || ''}
+                        onChange={(e)=>{
+                          onChange(details.map((x,i)=> i===idx?{...x, discountPercent:e.target.value}:x))
+                          // Clear error when user types
+                          if (errors[idx]?.discountPercent) {
+                            setErrors(prev => {
+                              const newErrors = { ...prev }
+                              if (newErrors[idx]) {
+                                delete newErrors[idx].discountPercent
+                                if (Object.keys(newErrors[idx]).length === 0) {
+                                  delete newErrors[idx]
+                                }
+                              }
+                              return newErrors
+                            })
+                          }
+                        }}
+                      />
+                      {errors[idx]?.discountPercent && (
+                        <div className="text-xs text-red-500 mt-0.5 leading-tight">{errors[idx].discountPercent}</div>
+                      )}
+                    </div>
                   </div>
                 )}
                 {t === 'DISCOUNT_AMOUNT' && (
                   <div className="col-span-12 md:col-span-4">
-                    <div className="text-sm text-gray-700 mb-1">Giảm tiền</div>
-                    <input placeholder="Giảm tiền" className="w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value={d.discountAmount || ''} onChange={(e)=>onChange(details.map((x,i)=> i===idx?{...x, discountAmount:e.target.value}:x))} />
+                    <div className="text-sm text-gray-700 mb-1">Giảm tiền <span className="text-red-500">*</span></div>
+                    <div>
+                      <input
+                        placeholder="Giảm tiền"
+                        required
+                        className={`w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors[idx]?.discountAmount ? 'border-red-500' : ''}`}
+                        value={d.discountAmount || ''}
+                        onChange={(e)=>{
+                          onChange(details.map((x,i)=> i===idx?{...x, discountAmount:e.target.value}:x))
+                          // Clear error when user types
+                          if (errors[idx]?.discountAmount) {
+                            setErrors(prev => {
+                              const newErrors = { ...prev }
+                              if (newErrors[idx]) {
+                                delete newErrors[idx].discountAmount
+                                if (Object.keys(newErrors[idx]).length === 0) {
+                                  delete newErrors[idx]
+                                }
+                              }
+                              return newErrors
+                            })
+                          }
+                        }}
+                      />
+                      {errors[idx]?.discountAmount && (
+                        <div className="text-xs text-red-500 mt-0.5 leading-tight">{errors[idx].discountAmount}</div>
+                      )}
+                    </div>
                   </div>
                 )}
                 {(t === 'DISCOUNT_PERCENT' || t === 'DISCOUNT_AMOUNT') && (
@@ -668,16 +795,34 @@ const LineDetailEditor: React.FC<{ line: any; details: any[]; onChange: (arr: an
                 {t === 'BUY_X_GET_Y' && (
                   <>
                     <div className="col-span-12 md:col-span-2 relative">
-                      <div className="text-sm text-gray-700 mb-1">Sản phẩm điều kiện</div>
-                      <input
-                        placeholder="Nhập tên sản phẩm..."
-                        className="w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={(d.conditionQuery ?? '')}
-                        onChange={(e)=>{
-                          const q = e.target.value
-                          onChange(details.map((x,i)=> i===idx?{...x, conditionQuery:q, showSuggestCondition:true}:x))
-                        }}
-                      />
+                      <div className="text-sm text-gray-700 mb-1">Sản phẩm điều kiện <span className="text-red-500">*</span></div>
+                      <div>
+                        <input
+                          placeholder="Nhập tên sản phẩm..."
+                          className={`w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors[idx]?.conditionProductUnitId ? 'border-red-500' : ''}`}
+                          value={(d.conditionQuery ?? '')}
+                          onChange={(e)=>{
+                            const q = e.target.value
+                            onChange(details.map((x,i)=> i===idx?{...x, conditionQuery:q, showSuggestCondition:true}:x))
+                            // Clear error when user types
+                            if (errors[idx]?.conditionProductUnitId) {
+                              setErrors(prev => {
+                                const newErrors = { ...prev }
+                                if (newErrors[idx]) {
+                                  delete newErrors[idx].conditionProductUnitId
+                                  if (Object.keys(newErrors[idx]).length === 0) {
+                                    delete newErrors[idx]
+                                  }
+                                }
+                                return newErrors
+                              })
+                            }
+                          }}
+                        />
+                        {errors[idx]?.conditionProductUnitId && (
+                          <div className="text-xs text-red-500 mt-0.5 leading-tight">{errors[idx].conditionProductUnitId}</div>
+                        )}
+                      </div>
                       {((d.conditionQuery || '').trim().length > 0) && d.showSuggestCondition && (
                         <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-48 overflow-auto">
                           {products.filter(p => p.name.toLowerCase().includes(String(d.conditionQuery).toLowerCase())).slice(0,8).map(product => (
@@ -685,48 +830,124 @@ const LineDetailEditor: React.FC<{ line: any; details: any[]; onChange: (arr: an
                               setSelectedProductForCondition(prev => ({ ...prev, [idx]: product.id }))
                               setSelectedUnitForCondition(prev => ({ ...prev, [idx]: 0 }))
                               onChange(details.map((x,i)=> i===idx?{...x, conditionQuery: product.name, showSuggestCondition:false, conditionProductUnitId: ''}:x))
+                              // Clear error when user selects product
+                              if (errors[idx]?.conditionProductUnitId) {
+                                setErrors(prev => {
+                                  const newErrors = { ...prev }
+                                  if (newErrors[idx]) {
+                                    delete newErrors[idx].conditionProductUnitId
+                                    if (Object.keys(newErrors[idx]).length === 0) {
+                                      delete newErrors[idx]
+                                    }
+                                  }
+                                  return newErrors
+                                })
+                              }
                             }}>{product.name}</div>
                           ))}
                         </div>
                       )}
                     </div>
                     <div className="col-span-12 md:col-span-2">
-                      <div className="text-sm text-gray-700 mb-1">Đơn vị</div>
-                      <select
-                        className="w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={selectedUnitForCondition[idx] || ''}
-                        onChange={(e) => {
-                          const unitId = Number(e.target.value)
-                          setSelectedUnitForCondition(prev => ({ ...prev, [idx]: unitId }))
-                          onChange(details.map((x,i)=> i===idx?{...x, conditionProductUnitId: unitId}:x))
-                        }}
-                        disabled={!selectedProductForCondition[idx]}
-                      >
-                        <option value="">-- Chọn --</option>
-                        {selectedProductForCondition[idx] && (() => {
-                          const selectedProduct = products.find(p => p.id === selectedProductForCondition[idx])
-                          console.log('Condition Product:', selectedProduct?.name, 'Units:', selectedProduct?.productUnits)
-                          return selectedProduct?.productUnits.map(unit => (
-                            <option key={unit.id} value={unit.id}>{unit.unitName}</option>
-                          ))
-                        })()}
-                      </select>
+                      <div className="text-sm text-gray-700 mb-1">Đơn vị <span className="text-red-500">*</span></div>
+                      <div>
+                        <select
+                          required
+                          className={`w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors[idx]?.conditionProductUnitId ? 'border-red-500' : ''}`}
+                          value={selectedUnitForCondition[idx] || ''}
+                          onChange={(e) => {
+                            const unitId = Number(e.target.value)
+                            setSelectedUnitForCondition(prev => ({ ...prev, [idx]: unitId }))
+                            onChange(details.map((x,i)=> i===idx?{...x, conditionProductUnitId: unitId}:x))
+                            // Clear error when user selects
+                            if (errors[idx]?.conditionProductUnitId) {
+                              setErrors(prev => {
+                                const newErrors = { ...prev }
+                                if (newErrors[idx]) {
+                                  delete newErrors[idx].conditionProductUnitId
+                                  if (Object.keys(newErrors[idx]).length === 0) {
+                                    delete newErrors[idx]
+                                  }
+                                }
+                                return newErrors
+                              })
+                            }
+                          }}
+                          disabled={!selectedProductForCondition[idx]}
+                        >
+                          <option value="">-- Chọn --</option>
+                          {selectedProductForCondition[idx] && (() => {
+                            const selectedProduct = products.find(p => p.id === selectedProductForCondition[idx])
+                            console.log('Condition Product:', selectedProduct?.name, 'Units:', selectedProduct?.productUnits)
+                            return selectedProduct?.productUnits.map(unit => (
+                              <option key={unit.id} value={unit.id}>{unit.unitName}</option>
+                            ))
+                          })()}
+                        </select>
+                        {errors[idx]?.conditionProductUnitId && (
+                          <div className="text-xs text-red-500 mt-0.5 leading-tight">{errors[idx].conditionProductUnitId}</div>
+                        )}
+                      </div>
                     </div>
                     <div className="col-span-12 md:col-span-1">
-                      <div className="text-sm text-gray-700 mb-1">SL mua</div>
-                      <input placeholder="SL X" className="w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value={d.conditionQuantity || ''} onChange={(e)=>onChange(details.map((x,i)=> i===idx?{...x, conditionQuantity:e.target.value}:x))} />
+                      <div className="text-sm text-gray-700 mb-1">SL mua <span className="text-red-500">*</span></div>
+                      <div>
+                        <input
+                          placeholder="SL X"
+                          required
+                          className={`w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors[idx]?.conditionQuantity ? 'border-red-500' : ''}`}
+                          value={d.conditionQuantity || ''}
+                          onChange={(e)=>{
+                            onChange(details.map((x,i)=> i===idx?{...x, conditionQuantity:e.target.value}:x))
+                            // Clear error when user types
+                            if (errors[idx]?.conditionQuantity) {
+                              setErrors(prev => {
+                                const newErrors = { ...prev }
+                                if (newErrors[idx]) {
+                                  delete newErrors[idx].conditionQuantity
+                                  if (Object.keys(newErrors[idx]).length === 0) {
+                                    delete newErrors[idx]
+                                  }
+                                }
+                                return newErrors
+                              })
+                            }
+                          }}
+                        />
+                        {errors[idx]?.conditionQuantity && (
+                          <div className="text-xs text-red-500 mt-0.5 leading-tight">{errors[idx].conditionQuantity}</div>
+                        )}
+                      </div>
                     </div>
                     <div className="col-span-12 md:col-span-2 relative">
-                      <div className="text-sm text-gray-700 mb-1">Sản phẩm quà tặng</div>
-                      <input
-                        placeholder="Nhập tên sản phẩm..."
-                        className="w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={(d.giftQuery ?? '')}
-                        onChange={(e)=>{
-                          const q = e.target.value
-                          onChange(details.map((x,i)=> i===idx?{...x, giftQuery:q, showSuggest:true}:x))
-                        }}
-                      />
+                      <div className="text-sm text-gray-700 mb-1">Sản phẩm quà tặng <span className="text-red-500">*</span></div>
+                      <div>
+                        <input
+                          placeholder="Nhập tên sản phẩm..."
+                          className={`w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors[idx]?.giftProductUnitId ? 'border-red-500' : ''}`}
+                          value={(d.giftQuery ?? '')}
+                          onChange={(e)=>{
+                            const q = e.target.value
+                            onChange(details.map((x,i)=> i===idx?{...x, giftQuery:q, showSuggest:true}:x))
+                            // Clear error when user types
+                            if (errors[idx]?.giftProductUnitId) {
+                              setErrors(prev => {
+                                const newErrors = { ...prev }
+                                if (newErrors[idx]) {
+                                  delete newErrors[idx].giftProductUnitId
+                                  if (Object.keys(newErrors[idx]).length === 0) {
+                                    delete newErrors[idx]
+                                  }
+                                }
+                                return newErrors
+                              })
+                            }
+                          }}
+                        />
+                        {errors[idx]?.giftProductUnitId && (
+                          <div className="text-xs text-red-500 mt-0.5 leading-tight">{errors[idx].giftProductUnitId}</div>
+                        )}
+                      </div>
                       {((d.giftQuery || '').trim().length > 0) && d.showSuggest && (
                         <div className="absolute z-10 mt-1 w-full bg-white border rounded shadow max-h-48 overflow-auto">
                           {products.filter(p => p.name.toLowerCase().includes(String(d.giftQuery).toLowerCase())).slice(0,8).map(product => (
@@ -734,36 +955,94 @@ const LineDetailEditor: React.FC<{ line: any; details: any[]; onChange: (arr: an
                               setSelectedProductForGift(prev => ({ ...prev, [idx]: product.id }))
                               setSelectedUnitForGift(prev => ({ ...prev, [idx]: 0 }))
                               onChange(details.map((x,i)=> i===idx?{...x, giftQuery: product.name, showSuggest:false, giftProductUnitId: ''}:x))
+                              // Clear error when user selects product
+                              if (errors[idx]?.giftProductUnitId) {
+                                setErrors(prev => {
+                                  const newErrors = { ...prev }
+                                  if (newErrors[idx]) {
+                                    delete newErrors[idx].giftProductUnitId
+                                    if (Object.keys(newErrors[idx]).length === 0) {
+                                      delete newErrors[idx]
+                                    }
+                                  }
+                                  return newErrors
+                                })
+                              }
                             }}>{product.name}</div>
                           ))}
                         </div>
                       )}
                     </div>
                     <div className="col-span-12 md:col-span-2">
-                      <div className="text-sm text-gray-700 mb-1">Đơn vị</div>
-                      <select
-                        className="w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={selectedUnitForGift[idx] || ''}
-                        onChange={(e) => {
-                          const unitId = Number(e.target.value)
-                          setSelectedUnitForGift(prev => ({ ...prev, [idx]: unitId }))
-                          onChange(details.map((x,i)=> i===idx?{...x, giftProductUnitId: unitId}:x))
-                        }}
-                        disabled={!selectedProductForGift[idx]}
-                      >
-                        <option value="">-- Chọn --</option>
-                        {selectedProductForGift[idx] && (() => {
-                          const selectedProduct = products.find(p => p.id === selectedProductForGift[idx])
-                          console.log('Gift Product:', selectedProduct?.name, 'Units:', selectedProduct?.productUnits)
-                          return selectedProduct?.productUnits.map(unit => (
-                            <option key={unit.id} value={unit.id}>{unit.unitName}</option>
-                          ))
-                        })()}
-                      </select>
+                      <div className="text-sm text-gray-700 mb-1">Đơn vị <span className="text-red-500">*</span></div>
+                      <div>
+                        <select
+                          required
+                          className={`w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors[idx]?.giftProductUnitId ? 'border-red-500' : ''}`}
+                          value={selectedUnitForGift[idx] || ''}
+                          onChange={(e) => {
+                            const unitId = Number(e.target.value)
+                            setSelectedUnitForGift(prev => ({ ...prev, [idx]: unitId }))
+                            onChange(details.map((x,i)=> i===idx?{...x, giftProductUnitId: unitId}:x))
+                            // Clear error when user selects
+                            if (errors[idx]?.giftProductUnitId) {
+                              setErrors(prev => {
+                                const newErrors = { ...prev }
+                                if (newErrors[idx]) {
+                                  delete newErrors[idx].giftProductUnitId
+                                  if (Object.keys(newErrors[idx]).length === 0) {
+                                    delete newErrors[idx]
+                                  }
+                                }
+                                return newErrors
+                              })
+                            }
+                          }}
+                          disabled={!selectedProductForGift[idx]}
+                        >
+                          <option value="">-- Chọn --</option>
+                          {selectedProductForGift[idx] && (() => {
+                            const selectedProduct = products.find(p => p.id === selectedProductForGift[idx])
+                            console.log('Gift Product:', selectedProduct?.name, 'Units:', selectedProduct?.productUnits)
+                            return selectedProduct?.productUnits.map(unit => (
+                              <option key={unit.id} value={unit.id}>{unit.unitName}</option>
+                            ))
+                          })()}
+                        </select>
+                        {errors[idx]?.giftProductUnitId && (
+                          <div className="text-xs text-red-500 mt-0.5 leading-tight">{errors[idx].giftProductUnitId}</div>
+                        )}
+                      </div>
                     </div>
                     <div className="col-span-12 md:col-span-1">
-                      <div className="text-sm text-gray-700 mb-1">SL tặng</div>
-                      <input placeholder="SL Y" className="w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" value={d.freeQuantity || ''} onChange={(e)=>onChange(details.map((x,i)=> i===idx?{...x, freeQuantity:e.target.value}:x))} />
+                      <div className="text-sm text-gray-700 mb-1">SL tặng <span className="text-red-500">*</span></div>
+                      <div>
+                        <input
+                          placeholder="SL Y"
+                          required
+                          className={`w-full px-3 py-2.5 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors[idx]?.freeQuantity ? 'border-red-500' : ''}`}
+                          value={d.freeQuantity || ''}
+                          onChange={(e)=>{
+                            onChange(details.map((x,i)=> i===idx?{...x, freeQuantity:e.target.value}:x))
+                            // Clear error when user types
+                            if (errors[idx]?.freeQuantity) {
+                              setErrors(prev => {
+                                const newErrors = { ...prev }
+                                if (newErrors[idx]) {
+                                  delete newErrors[idx].freeQuantity
+                                  if (Object.keys(newErrors[idx]).length === 0) {
+                                    delete newErrors[idx]
+                                  }
+                                }
+                                return newErrors
+                              })
+                            }
+                          }}
+                        />
+                        {errors[idx]?.freeQuantity && (
+                          <div className="text-xs text-red-500 mt-0.5 leading-tight">{errors[idx].freeQuantity}</div>
+                        )}
+                      </div>
                     </div>
                     <div className="col-span-12 md:col-span-1 flex items-end justify-end">
                       {!d.id && (

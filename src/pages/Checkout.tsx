@@ -77,6 +77,22 @@ const Checkout: React.FC = () => {
     e.preventDefault()
     if (!isAuthenticated) return
 
+    // Validate address fields when delivery method is HOME_DELIVERY
+    if (cartState.deliveryMethod === 'HOME_DELIVERY' || !cartState.deliveryMethod) {
+      if (!formData.address || !formData.city || !formData.state) {
+        setNotification({
+          isOpen: true,
+          title: 'Thiếu thông tin địa chỉ',
+          message: 'Vui lòng nhập đầy đủ địa chỉ, tỉnh/thành phố và quận/huyện để tiếp tục.',
+          type: 'error',
+          showContinueButton: false,
+          onContinue: undefined,
+          onCloseAction: undefined
+        })
+        return
+      }
+    }
+
     try {
       const orderDetails = cartState.items.map((item) => ({
         productUnitId: item.unitId || item.id,
@@ -90,7 +106,9 @@ const Checkout: React.FC = () => {
         orderDetails,
         promotionAppliedId,
         paymentMethod: pm,
-        shippingAddress: `${formData.address}, ${formData.city}, ${formData.state}`,
+        shippingAddress: cartState.deliveryMethod === 'PICKUP_AT_STORE'
+          ? ''
+          : `${formData.address}, ${formData.city}, ${formData.state}`,
         deliveryMethod: cartState.deliveryMethod || 'HOME_DELIVERY',
         phoneNumber: formData.phone,
       }
@@ -286,72 +304,75 @@ const Checkout: React.FC = () => {
                   </div>
                 </div>
 
+                {cartState.deliveryMethod !== 'PICKUP_AT_STORE' && (
+                  <>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Địa chỉ *
+                      </label>
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleInputChange}
+                        placeholder="Nhập địa chỉ"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        required
+                      />
+                    </div>
 
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Địa chỉ *
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    placeholder="Nhập địa chỉ"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tỉnh/Thành phố *
-                    </label>
-                    <select
-                      name="state"
-                      value={formData.state}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      required
-                    >
-                      <option value="">Chọn tỉnh/thành phố</option>
-                      <option value="hanoi">Hà Nội</option>
-                      <option value="hcm">TP. Hồ Chí Minh</option>
-                      <option value="danang">Đà Nẵng</option>
-                      <option value="haiphong">Hải Phòng</option>
-                      <option value="cantho">Cần Thơ</option>
-                      <option value="hue">Huế</option>
-                      <option value="nhatrang">Nha Trang</option>
-                      <option value="dalat">Đà Lạt</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Quận/Huyện *
-                    </label>
-                    <select
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      required
-                    >
-                      <option value="">Chọn quận/huyện</option>
-                      <option value="district1">Quận 1</option>
-                      <option value="district2">Quận 2</option>
-                      <option value="district3">Quận 3</option>
-                      <option value="district4">Quận 4</option>
-                      <option value="district5">Quận 5</option>
-                      <option value="district6">Quận 6</option>
-                      <option value="district7">Quận 7</option>
-                      <option value="district8">Quận 8</option>
-                      <option value="district9">Quận 9</option>
-                      <option value="district10">Quận 10</option>
-                      <option value="district11">Quận 11</option>
-                      <option value="district12">Quận 12</option>
-                    </select>
-                  </div>
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Tỉnh/Thành phố *
+                        </label>
+                        <select
+                          name="state"
+                          value={formData.state}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          required
+                        >
+                          <option value="">Chọn tỉnh/thành phố</option>
+                          <option value="hanoi">Hà Nội</option>
+                          <option value="hcm">TP. Hồ Chí Minh</option>
+                          <option value="danang">Đà Nẵng</option>
+                          <option value="haiphong">Hải Phòng</option>
+                          <option value="cantho">Cần Thơ</option>
+                          <option value="hue">Huế</option>
+                          <option value="nhatrang">Nha Trang</option>
+                          <option value="dalat">Đà Lạt</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Quận/Huyện *
+                        </label>
+                        <select
+                          name="city"
+                          value={formData.city}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          required
+                        >
+                          <option value="">Chọn quận/huyện</option>
+                          <option value="district1">Quận 1</option>
+                          <option value="district2">Quận 2</option>
+                          <option value="district3">Quận 3</option>
+                          <option value="district4">Quận 4</option>
+                          <option value="district5">Quận 5</option>
+                          <option value="district6">Quận 6</option>
+                          <option value="district7">Quận 7</option>
+                          <option value="district8">Quận 8</option>
+                          <option value="district9">Quận 9</option>
+                          <option value="district10">Quận 10</option>
+                          <option value="district11">Quận 11</option>
+                          <option value="district12">Quận 12</option>
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
