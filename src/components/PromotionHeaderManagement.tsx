@@ -1,10 +1,14 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Modal from './Modal'
 import { PromotionServiceApi, PromotionMutations } from '@/services/promotionService'
 import { ProductService } from '@/services/productService'
 
-const PromotionHeaderManagement: React.FC = () => {
+interface PromotionHeaderManagementProps {
+  reloadTrigger?: number
+}
+
+const PromotionHeaderManagement: React.FC<PromotionHeaderManagementProps> = ({ reloadTrigger = 0 }) => {
   const navigate = useNavigate()
   const [headers, setHeaders] = useState<any[]>([])
   const [filterText, setFilterText] = useState('')
@@ -35,7 +39,7 @@ const PromotionHeaderManagement: React.FC = () => {
     return true
   }
 
-  const loadHeaders = async () => {
+  const loadHeaders = useCallback(async () => {
     try {
       const data = await PromotionServiceApi.getHeaders()
       // Map BE to UI model
@@ -51,9 +55,9 @@ const PromotionHeaderManagement: React.FC = () => {
     } catch {
       setHeaders([])
     }
-  }
+  }, [])
 
-  useEffect(() => { loadHeaders() }, [])
+  useEffect(() => { loadHeaders() }, [loadHeaders, reloadTrigger])
 
   // Ẩn chức năng thêm header mới theo yêu cầu
 

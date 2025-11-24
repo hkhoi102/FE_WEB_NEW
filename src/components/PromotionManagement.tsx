@@ -53,6 +53,7 @@ const PromotionManagement: React.FC = () => {
   }
   const newLine = (): LineItem => ({ targetType: 'PRODUCT', targetId: 0, type: 'DISCOUNT_PERCENT' })
   const [lines, setLines] = useState<LineItem[]>([newLine()])
+  const [reloadHeadersFlag, setReloadHeadersFlag] = useState(0)
 
   const validateHeaderDates = (startDate: string, endDate: string) => {
     if (startDate && endDate) {
@@ -120,7 +121,7 @@ const PromotionManagement: React.FC = () => {
         </div>
 
         <div className="p-6">
-          <PromotionHeaderManagement />
+          <PromotionHeaderManagement reloadTrigger={reloadHeadersFlag} />
         </div>
       </div>
 
@@ -367,6 +368,7 @@ const PromotionManagement: React.FC = () => {
                       await PromotionService.createLine({ promotionHeaderId: h.id, targetType: null as any, targetId: null as any, startDate: ln.lineStartDate || undefined, endDate: ln.lineEndDate || undefined, active: true, type: ln.type })
                     }
                     setIsWizardOpen(false)
+                    setReloadHeadersFlag(prev => prev + 1)
                     alert('Tạo khuyến mãi thành công')
                   } catch (e:any) {
                     alert(e?.message || 'Tạo khuyến mãi thất bại')
