@@ -140,6 +140,14 @@ const Admin = () => {
   // View detail modal
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [detailProduct, setDetailProduct] = useState<Product | null>(null)
+  const resolveProductImage = (product?: Product | null) => {
+    if (!product) return ''
+    const fromProduct = product.imageUrl
+    if (fromProduct) return fromProduct as string
+    const unitWithImage = (product.productUnits || []).find(u => u?.imageUrl)
+    return (unitWithImage?.imageUrl as string) || ''
+  }
+
 
 
 
@@ -1032,8 +1040,8 @@ const Admin = () => {
           <div className="space-y-4">
             <div className="flex items-start gap-4">
               <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100">
-                {detailProduct.imageUrl ? (
-                  <img src={detailProduct.imageUrl} alt={detailProduct.name} className="w-full h-full object-cover" />
+                {resolveProductImage(detailProduct) ? (
+                  <img src={resolveProductImage(detailProduct)} alt={detailProduct.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">No image</div>
                 )}
@@ -1042,7 +1050,6 @@ const Admin = () => {
                 <div className="text-lg font-semibold text-gray-900">{detailProduct.name}</div>
                 <div className="text-sm text-gray-600 mt-1">{detailProduct.description || '—'}</div>
                 <div className="text-sm text-gray-600 mt-1">Danh mục: {detailProduct.categoryName || categories.find(c => c.id === detailProduct.categoryId)?.name || `ID: ${detailProduct.categoryId}`}</div>
-                <div className="text-sm text-gray-600 mt-1">HSD: {detailProduct.expirationDate ? new Date(detailProduct.expirationDate).toLocaleDateString('vi-VN') : 'Không có'}</div>
                 <div className="text-sm text-gray-600 mt-1">Trạng thái: {detailProduct.active ? 'Hoạt động' : 'Không hoạt động'}</div>
               </div>
             </div>
@@ -1505,12 +1512,29 @@ const UnitRow = ({ productId, product, unit }: { productId: number; product: Pro
     ? unit.barcodes
     : (productAny?.barcodeList || []).filter(b => b.productUnitId === (unit.id ?? unit.unitId))
 
+  const unitImage = typeof unit.imageUrl === 'string' && unit.imageUrl.trim().length > 0 ? unit.imageUrl as string : ''
+
   return (
     <div className="flex items-center justify-between bg-gray-50 rounded-md p-3">
-      <div className="text-sm text-gray-800">
-        <span className="font-medium">{unit.unitName}</span>
-        <span className="ml-2 text-gray-600">Hệ số: {unit.conversionFactor ?? unit.conversionRate ?? 1}</span>
-        {unit.isDefault && <span className="ml-2 px-2 py-0.5 text-xs rounded bg-green-100 text-green-800">Đơn vị cơ bản</span>}
+      <div className="flex items-center gap-3">
+        <div className="w-14 h-14 rounded-lg overflow-hidden bg-white border border-gray-200 flex items-center justify-center">
+          {unitImage ? (
+            <img src={unitImage} alt={unit.unitName} className="w-full h-full object-cover" />
+          ) : (
+            <div className="text-gray-300">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+          )}
+        </div>
+        <div className="text-sm text-gray-800">
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{unit.unitName}</span>
+            {unit.isDefault && <span className="px-2 py-0.5 text-xs rounded bg-green-100 text-green-800">Đơn vị cơ bản</span>}
+          </div>
+          <div className="text-xs text-gray-600 mt-1">Hệ số: {unit.conversionFactor ?? unit.conversionRate ?? 1}</div>
+        </div>
       </div>
       <div className="flex items-center gap-4">
         <div className="text-sm text-gray-800">
