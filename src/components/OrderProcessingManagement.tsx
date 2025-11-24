@@ -6,7 +6,6 @@ import { OrderApi } from '../services/orderService'
 import { CustomerService } from '../services/customerService'
 import { ProductService } from '../services/productService'
 import { ReturnService } from '../services/returnService'
-import ReturnProcessingManagement from './ReturnProcessingManagement'
 
 const OrderProcessingManagement: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([])
@@ -22,7 +21,6 @@ const OrderProcessingManagement: React.FC = () => {
   const [selectedOrders, setSelectedOrders] = useState<number[]>([])
   // Deprecated local filter; use orderStatusFilter instead
   const [orderStatusFilter, setOrderStatusFilter] = useState<'ALL' | 'PENDING' | 'PROCESSING' | 'DELIVERING'>('PENDING')
-  const [activeSubTab, setActiveSubTab] = useState<'newOrders' | 'returnOrders'>('newOrders')
 
   // Map backend status to UI status
   const mapBackendStatusToUI = (status: string): Order['status'] => {
@@ -332,26 +330,10 @@ const OrderProcessingManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Inner Tabs */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="border-b border-gray-200 px-6">
-          <nav className="-mb-px flex space-x-8">
-            <button
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeSubTab === 'newOrders' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-              onClick={() => setActiveSubTab('newOrders')}
-            >Đơn hàng mới</button>
-            <button
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeSubTab === 'returnOrders' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-              onClick={() => setActiveSubTab('returnOrders')}
-            >Xử lý đơn trả về</button>
-          </nav>
-        </div>
+      <div className="bg-white shadow rounded-lg px-6 py-4">
+        <h3 className="text-base font-semibold text-gray-900">Đơn hàng mới</h3>
       </div>
 
-      {activeSubTab === 'returnOrders' ? (
-        <ReturnProcessingManagement />
-      ) : (
-      <>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
         <div className="bg-white overflow-hidden shadow rounded-lg">
@@ -631,8 +613,6 @@ const OrderProcessingManagement: React.FC = () => {
         </div>
       </div>
 
-      </>
-      )}
 
       {/* Modal */}
       <Modal
