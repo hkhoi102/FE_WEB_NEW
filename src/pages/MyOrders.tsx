@@ -8,7 +8,7 @@ import { ProductService } from '@/services/productService'
 import { OrderApi as OrderApiNs } from '@/services/orderService'
 
 const statusLabel: Record<OrderStatus, string> = {
-  PENDING: 'Chờ xác nhận',
+  PENDING: 'Chờ chuẩn bị hàng',
   CONFIRMED: 'Đã chuẩn bị hàng',
   DELIVERING: 'Đang giao',
   COMPLETED: 'Hoàn thành',
@@ -48,7 +48,6 @@ export default function MyOrders() {
   const [returnError, setReturnError] = useState<string | null>(null)
   const [noticeOpen, setNoticeOpen] = useState<boolean>(false)
   const [noticeMessage, setNoticeMessage] = useState<string>('')
-  const [cancelSubmitting, setCancelSubmitting] = useState<boolean>(false)
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
@@ -256,41 +255,72 @@ export default function MyOrders() {
         {detailLoading ? (
           <div className="text-gray-600">Đang tải chi tiết...</div>
         ) : orderDetail ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="space-y-5">
+            {/* Order summary header */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div>
-                <div className="text-gray-500">Trạng thái</div>
-                <div className="font-medium">{statusLabel[orderDetail.status]}</div>
+                <div className="text-xs uppercase tracking-wide text-gray-500 mb-1">
+                  Mã đơn hàng
+                </div>
+                <div className="text-base font-semibold text-gray-900">
+                  {(orderDetail as any).orderCode || `#${orderDetail.id}`}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Tạo lúc {new Date(orderDetail.createdAt).toLocaleString()}
+                </div>
               </div>
-              {/* Tổng tiền và Giảm giá sẽ hiển thị dưới bảng chi tiết */}
-              {orderDetail.paymentMethod && (
-                <div>
-                  <div className="text-gray-500">Phương thức thanh toán</div>
-                  <div className="font-medium">{orderDetail.paymentMethod === 'COD' ? 'COD' : 'Chuyển khoản'}</div>
-                </div>
-              )}
-              {orderDetail.paymentStatus && (
-                <div>
-                  <div className="text-gray-500">Trạng thái thanh toán</div>
-                  <div className="font-medium">{orderDetail.paymentStatus === 'PAID' ? 'ĐÃ THANH TOÁN' : 'CHƯA THANH TOÁN'}</div>
-                </div>
-              )}
-              <div>
-                <div className="text-gray-500">Ngày tạo</div>
-                <div className="font-medium">{new Date(orderDetail.createdAt).toLocaleString()}</div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ring-1 ring-inset ${statusBadgeClass[orderDetail.status]}`}>
+                  {statusLabel[orderDetail.status]}
+                </span>
+                {orderDetail.paymentStatus && (
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ring-1 ring-inset ${
+                    orderDetail.paymentStatus === 'PAID'
+                      ? 'bg-green-50 text-green-700 ring-green-200'
+                      : 'bg-yellow-50 text-yellow-700 ring-yellow-200'
+                  }`}>
+                    {orderDetail.paymentStatus === 'PAID' ? 'ĐÃ THANH TOÁN' : 'CHƯA THANH TOÁN'}
+                  </span>
+                )}
               </div>
-              {orderDetail.deliveryMethod && (
-                <div>
-                  <div className="text-gray-500">Phương thức nhận hàng</div>
-                  <div className="font-medium">{orderDetail.deliveryMethod === 'PICKUP_AT_STORE' ? 'Nhận tại cửa hàng' : 'Giao hàng tận nơi'}</div>
-                </div>
-              )}
-              {(orderDetail.shippingAddress || customer?.address) && orderDetail.deliveryMethod !== 'PICKUP_AT_STORE' && (
-                <div className="col-span-2">
-                  <div className="text-gray-500">Địa chỉ giao hàng</div>
-                  <div className="font-medium">{orderDetail.shippingAddress || customer?.address}</div>
-                </div>
-              )}
+            </div>
+
+            {/* Meta info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-1">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Thanh toán</div>
+                {orderDetail.paymentMethod && (
+                  <p className="text-sm text-gray-800">
+                    Phương thức: <span className="font-medium">
+                      {orderDetail.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng (COD)' : 'Chuyển khoản ngân hàng'}
+                    </span>
+                  </p>
+                )}
+                {orderDetail.paymentStatus && (
+                  <p className="text-xs text-gray-500">
+                    Trạng thái: {orderDetail.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                  </p>
+                )}
+              </div>
+
+              <div className="bg-white border border-gray-200 rounded-lg p-3 space-y-1">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nhận hàng</div>
+                {orderDetail.deliveryMethod && (
+                  <p className="text-sm text-gray-800">
+                    Phương thức:{' '}
+                    <span className="font-medium">
+                      {orderDetail.deliveryMethod === 'PICKUP_AT_STORE' ? 'Nhận tại cửa hàng' : 'Giao hàng tận nơi'}
+                    </span>
+                  </p>
+                )}
+                {(orderDetail.shippingAddress || customer?.address) && orderDetail.deliveryMethod !== 'PICKUP_AT_STORE' && (
+                  <p className="text-xs text-gray-500">
+                    Địa chỉ giao hàng: <span className="font-medium text-gray-800">
+                      {orderDetail.shippingAddress || customer?.address}
+                    </span>
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Thông báo khi đơn hàng đã chuẩn bị và nhận tại cửa hàng */}
@@ -340,64 +370,24 @@ export default function MyOrders() {
             </div>
 
             {/* Tổng kết dưới bảng */}
-            <div className="flex flex-col items-end gap-1">
-              {typeof orderDetail.discountAmount === 'number' && (
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-2 border-t">
+              {typeof orderDetail.discountAmount === 'number' && orderDetail.discountAmount > 0 && (
                 <div className="text-sm text-gray-700">
-                  <span className="mr-2">Giảm giá:</span>
-                  <span className="font-medium">{orderDetail.discountAmount?.toLocaleString('vi-VN')} đ</span>
+                  <span className="mr-1 text-gray-500">Giảm giá:</span>
+                  <span className="font-medium text-green-600">
+                    -{orderDetail.discountAmount?.toLocaleString('vi-VN')} đ
+                  </span>
                 </div>
               )}
-              <div className="text-base text-gray-900">
-                <span className="mr-2 font-medium">Tổng tiền:</span>
-                <span className="font-semibold">{orderDetail.totalAmount?.toLocaleString('vi-VN')} đ</span>
+              <div className="text-right">
+                <div className="text-xs uppercase tracking-wide text-gray-500">Tổng tiền thanh toán</div>
+                <div className="text-lg font-semibold text-gray-900">
+                  {orderDetail.totalAmount?.toLocaleString('vi-VN')} đ
+                </div>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="pt-2 flex justify-end gap-2">
-              {/* Cancel order for PENDING */}
-              {(orderDetail.status === 'PENDING' || orderDetail.canCancel === true) && (
-                <button
-                  disabled={cancelSubmitting}
-                  className="px-4 py-2 text-sm bg-white border border-red-300 text-red-700 rounded-md hover:bg-red-50 disabled:opacity-50"
-                  onClick={async () => {
-                    if (!selectedOrderId) return
-                    try {
-                      setCancelSubmitting(true)
-                      await OrderApi.cancel(selectedOrderId)
-                      await syncOrder(selectedOrderId)
-                      await refreshOrders()
-                      setNoticeMessage('Đã hủy đơn hàng thành công')
-                      setNoticeOpen(true)
-                    } catch (e: any) {
-                      setNoticeMessage(e?.message || 'Hủy đơn hàng thất bại')
-                      setNoticeOpen(true)
-                    } finally {
-                      // Đóng modal chi tiết dù thành công hay thất bại
-                      closeDetail()
-                      setCancelSubmitting(false)
-                    }
-                  }}
-                >Hủy đơn</button>
-              )}
-
-              {/* Return buttons - Ẩn chức năng trả hàng cho khách hàng */}
-              {/* {((orderDetail.canReturn === true) || (orderDetail.status === 'COMPLETED')) && (
-                <button
-                  className="px-4 py-2 text-sm bg-white border border-red-300 text-red-700 rounded-md hover:bg-red-50"
-                  onClick={() => {
-                    // Pre-fill quantities với số lượng gốc (trả hết)
-                    const init: Record<number, number> = {}
-                    for (const d of (orderDetail.orderDetails ?? [])) init[d.id] = d.quantity
-                    setReturnQuantities(init)
-                    setReturnReason('Yêu cầu khách hàng')
-                    setReturnReasonCustom('')
-                    setReturnError(null)
-                    setReturnOpen(true)
-                  }}
-                >Yêu cầu trả hàng</button>
-              )} */}
-            </div>
+            {/* Actions: hiện tại khách hàng chỉ xem, không cho hủy / trả hàng từ đây */}
           </div>
         ) : (
           <div className="text-gray-600">Không thể tải chi tiết đơn hàng.</div>

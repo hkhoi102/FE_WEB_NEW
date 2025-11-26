@@ -37,6 +37,7 @@ export interface OrderDetailLineDto {
 export interface OrderResponseDto {
   id: number
   customerId: number
+  orderCode?: string
   totalAmount: number
   discountAmount?: number
   status: OrderStatus
@@ -115,12 +116,20 @@ export interface CartReviewResponse {
   discountAmount: number
   totalAmount: number
   appliedPromotions?: string[]
+  // Thông tin khuyến mãi chính (nếu BE có trả về)
   appliedPromotion?: {
     id: number
     name: string
     type: string
     discountAmount: number
   }
+  // Danh sách quà tặng (mua X tặng Y, v.v...) nếu có
+  giftItems?: Array<{
+    productUnitId?: number
+    productName: string
+    unitName: string
+    quantity: number
+  }>
   orderDetails: Array<{
     productUnitId: number
     productName: string
@@ -244,6 +253,7 @@ export const OrderApi = {
           type: 'DISCOUNT',
           discountAmount: apiData.totalDiscountAmount || 0
         } : undefined,
+        giftItems: Array.isArray(apiData.giftItems) ? apiData.giftItems : undefined,
         orderDetails: request.orderDetails.map(item => ({
           productUnitId: item.productUnitId,
           productName: `Product ${item.productUnitId}`,

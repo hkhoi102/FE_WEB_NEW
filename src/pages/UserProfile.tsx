@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserAuth } from '@/contexts/UserAuthContext'
 import { AuthService } from '@/services/authService'
+import { CustomerService } from '@/services/customerService'
 
 export default function UserProfile() {
   const { user, accessToken, isAuthenticated, refreshUser, logout } = useUserAuth()
@@ -11,6 +12,8 @@ export default function UserProfile() {
   const [fullName, setFullName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [email, setEmail] = useState('')
+  const [address, setAddress] = useState('')
+  const [customerId, setCustomerId] = useState<number | null>(null)
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileError, setProfileError] = useState<string | null>(null)
   const [profileSuccess, setProfileSuccess] = useState(false)
@@ -34,6 +37,25 @@ export default function UserProfile() {
     setFullName(user.fullName || '')
     setPhoneNumber(user.phoneNumber || '')
     setEmail(user.email || '')
+
+    // Load customer profile (để lấy địa chỉ & customerId)
+    const loadCustomerProfile = async () => {
+      try {
+        // Ưu tiên /customers/me, fallback by-user
+        let customer = await CustomerService.getMe()
+        if (!customer) {
+          customer = await CustomerService.getByUserId(user.id)
+        }
+        if (customer) {
+          setCustomerId(customer.id)
+          if (customer.address) setAddress(customer.address)
+        }
+      } catch (error) {
+        console.error('Failed to load customer profile for address', error)
+      }
+    }
+
+    loadCustomerProfile()
   }, [user, isAuthenticated, navigate])
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -48,13 +70,18 @@ export default function UserProfile() {
     setProfileSuccess(false)
 
     try {
-      // Update user profile
+      // Update user profile (họ tên + SĐT)
       await AuthService.updateProfile(accessToken, {
         fullName,
         phoneNumber,
       })
 
-      // Refresh user data in context
+      // Update customer address nếu đã có customerId
+      if (customerId && address) {
+        await CustomerService.updateAddress(customerId, address)
+      }
+
+      // Refresh user data trong context
       await refreshUser()
 
       setProfileSuccess(true)
@@ -185,6 +212,23 @@ export default function UserProfile() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder="Nhập số điện thoại"
               />
+            </div>
+
+            <div>
+              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                Địa chỉ giao hàng
+              </label>
+              <input
+                type="text"
+                id="address"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                placeholder="Nhập địa chỉ giao hàng mặc định"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Địa chỉ này sẽ được dùng mặc định khi bạn thanh toán (có thể sửa lại trên trang Checkout).
+              </p>
             </div>
 
             {profileError && (

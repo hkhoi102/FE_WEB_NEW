@@ -24,6 +24,24 @@ export interface CustomerInfoDto {
 const nameCache = new Map<number, string>()
 
 export const CustomerService = {
+  // Lấy thông tin customer hiện tại từ JWT
+  async getMe(): Promise<CustomerInfoDto | null> {
+    try {
+      // Thử endpoint /customers/me (phổ biến hơn)
+      let res = await fetch(`${API_BASE_URL}/customers/me`, { headers: authHeaders() })
+      if (!res.ok) {
+        // Fallback sang /customer/me nếu BE dùng dạng này
+        res = await fetch(`${API_BASE_URL}/customer/me`, { headers: authHeaders() })
+        if (!res.ok) return null
+      }
+      const raw = await res.json().catch(() => null)
+      const data = raw?.data ?? raw
+      return data as CustomerInfoDto | null
+    } catch {
+      return null
+    }
+  },
+
   async getById(id: number): Promise<CustomerInfoDto | null> {
     try {
       const res = await fetch(`${API_BASE_URL}/customers/${id}`, { headers: authHeaders() })
@@ -63,6 +81,19 @@ export const CustomerService = {
       if (name) results[id] = name
     }))
     return results
+  },
+
+  // Cập nhật địa chỉ khách hàng
+  async updateAddress(customerId: number, address: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/customers/${customerId}/address`, {
+      method: 'PATCH',
+      headers: authHeaders(),
+      body: JSON.stringify({ address }),
+    })
+    if (!res.ok) {
+      const text = await res.text().catch(() => '')
+      throw new Error(text || 'Failed to update customer address')
+    }
   }
 }
 

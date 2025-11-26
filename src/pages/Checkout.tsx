@@ -4,6 +4,7 @@ import { useCart } from '../contexts/CartContext'
 import { useUserAuth } from '../contexts/UserAuthContext'
 import { OrderApi } from '../services/orderService'
 import NotificationModal from '../components/NotificationModal'
+import { CustomerService } from '../services/customerService'
 
 const Checkout: React.FC = () => {
   const { state: cartState, clearCart, setDeliveryMethod } = useCart()
@@ -15,8 +16,6 @@ const Checkout: React.FC = () => {
     firstName: '',
     lastName: '',
     address: '',
-    city: '',
-    state: '',
     email: '',
     phone: '',
     saveInfo: false
@@ -58,6 +57,38 @@ const Checkout: React.FC = () => {
     }
   }, [isAuthenticated, user])
 
+  // Auto-fill địa chỉ giao hàng từ customer profile khi giao hàng tận nơi
+  useEffect(() => {
+    const fetchCustomerAddress = async () => {
+      // Chỉ lấy khi user đã đăng nhập và chọn giao tận nơi
+      if (!isAuthenticated || !user) return
+      if (cartState.deliveryMethod && cartState.deliveryMethod !== 'HOME_DELIVERY') return
+
+      try {
+        // Ưu tiên lấy theo endpoint /customers/me hoặc /customer/me
+        let customer = await CustomerService.getMe()
+        // Fallback: nếu BE không có /me thì lấy theo userId
+        if (!customer) {
+          customer = await CustomerService.getByUserId(user.id)
+        }
+
+        console.log('📍 Customer profile for address:', customer)
+
+        if (customer?.address) {
+          setFormData(prev => ({
+            ...prev,
+            // Ưu tiên địa chỉ từ API, nếu không có thì giữ giá trị cũ
+            address: customer.address || prev.address
+          }))
+        }
+      } catch (error) {
+        console.error('Failed to fetch customer address from customer profile', error)
+      }
+    }
+
+    fetchCustomerAddress()
+  }, [isAuthenticated, user, cartState.deliveryMethod])
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -77,13 +108,13 @@ const Checkout: React.FC = () => {
     e.preventDefault()
     if (!isAuthenticated) return
 
-    // Validate address fields when delivery method is HOME_DELIVERY
+    // Validate address when delivery method is HOME_DELIVERY
     if (cartState.deliveryMethod === 'HOME_DELIVERY' || !cartState.deliveryMethod) {
-      if (!formData.address || !formData.city || !formData.state) {
+      if (!formData.address) {
         setNotification({
           isOpen: true,
           title: 'Thiếu thông tin địa chỉ',
-          message: 'Vui lòng nhập đầy đủ địa chỉ, tỉnh/thành phố và quận/huyện để tiếp tục.',
+          message: 'Vui lòng nhập địa chỉ giao hàng để tiếp tục.',
           type: 'error',
           showContinueButton: false,
           onContinue: undefined,
@@ -108,7 +139,7 @@ const Checkout: React.FC = () => {
         paymentMethod: pm,
         shippingAddress: cartState.deliveryMethod === 'PICKUP_AT_STORE'
           ? ''
-          : `${formData.address}, ${formData.city}, ${formData.state}`,
+          : formData.address,
         deliveryMethod: cartState.deliveryMethod || 'HOME_DELIVERY',
         phoneNumber: formData.phone,
       }
@@ -305,73 +336,20 @@ const Checkout: React.FC = () => {
                 </div>
 
                 {cartState.deliveryMethod !== 'PICKUP_AT_STORE' && (
-                  <>
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Địa chỉ *
-                      </label>
-                      <input
-                        type="text"
-                        name="address"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        placeholder="Nhập địa chỉ"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                        required
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Tỉnh/Thành phố *
-                        </label>
-                        <select
-                          name="state"
-                          value={formData.state}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                          required
-                        >
-                          <option value="">Chọn tỉnh/thành phố</option>
-                          <option value="hanoi">Hà Nội</option>
-                          <option value="hcm">TP. Hồ Chí Minh</option>
-                          <option value="danang">Đà Nẵng</option>
-                          <option value="haiphong">Hải Phòng</option>
-                          <option value="cantho">Cần Thơ</option>
-                          <option value="hue">Huế</option>
-                          <option value="nhatrang">Nha Trang</option>
-                          <option value="dalat">Đà Lạt</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Quận/Huyện *
-                        </label>
-                        <select
-                          name="city"
-                          value={formData.city}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                          required
-                        >
-                          <option value="">Chọn quận/huyện</option>
-                          <option value="district1">Quận 1</option>
-                          <option value="district2">Quận 2</option>
-                          <option value="district3">Quận 3</option>
-                          <option value="district4">Quận 4</option>
-                          <option value="district5">Quận 5</option>
-                          <option value="district6">Quận 6</option>
-                          <option value="district7">Quận 7</option>
-                          <option value="district8">Quận 8</option>
-                          <option value="district9">Quận 9</option>
-                          <option value="district10">Quận 10</option>
-                          <option value="district11">Quận 11</option>
-                          <option value="district12">Quận 12</option>
-                        </select>
-                      </div>
-                    </div>
-                  </>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Địa chỉ *
+                    </label>
+                    <input
+                      type="text"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder="Nhập địa chỉ giao hàng (ví dụ: Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố)"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      required
+                    />
+                  </div>
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -557,6 +535,7 @@ const Checkout: React.FC = () => {
                   </div>
                 )}
 
+                {/* Khuyến mãi áp dụng (bao gồm mô tả) */}
                 {(reviewData?.appliedPromotion || (reviewData?.appliedPromotions && reviewData.appliedPromotions.length > 0)) && (
                   <div className="bg-green-50 p-3 rounded-lg space-y-2">
                     {reviewData?.appliedPromotion && (
@@ -583,6 +562,23 @@ const Checkout: React.FC = () => {
                         </ul>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Sản phẩm tặng kèm (mua X tặng Y) */}
+                {reviewData?.giftItems && reviewData.giftItems.length > 0 && (
+                  <div className="mt-2 bg-green-50 p-3 rounded-lg space-y-1">
+                    <div className="text-xs font-semibold text-green-800 uppercase tracking-wide flex items-center gap-1">
+                      <span>🎁</span>
+                      <span>Sản phẩm tặng kèm</span>
+                    </div>
+                    <ul className="space-y-1 text-xs text-green-700">
+                      {reviewData.giftItems.map((gift, index) => (
+                        <li key={`${gift.productName}-${index}`}>
+                          • {gift.productName} ({gift.unitName}) x{gift.quantity} - Miễn phí
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 

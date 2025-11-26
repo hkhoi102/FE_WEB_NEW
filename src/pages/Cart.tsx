@@ -197,31 +197,62 @@ const Cart: React.FC = () => {
                   </div>
                 )}
 
-
-                {reviewData?.appliedPromotion && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
-                        <span className="text-sm font-medium text-green-800">
-                          {reviewData.appliedPromotion.name}
-                        </span>
+                {/* Khuyến mãi áp dụng (bao gồm giảm giá & mô tả) */}
+                {(reviewData?.appliedPromotion || (reviewData?.appliedPromotions && reviewData.appliedPromotions.length > 0)) && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3 space-y-2">
+                    {reviewData?.appliedPromotion && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          </svg>
+                          <span className="text-sm font-medium text-green-800">
+                            {reviewData.appliedPromotion.name}
+                          </span>
+                        </div>
+                        <button
+                          onClick={removePromotion}
+                          className="text-green-600 hover:text-green-800 transition-colors"
+                          title="Xóa khuyến mãi"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                          </svg>
+                        </button>
                       </div>
-                      <button
-                        onClick={removePromotion}
-                        className="text-green-600 hover:text-green-800 transition-colors"
-                        title="Xóa khuyến mãi"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                      </button>
-                    </div>
-                    <p className="text-xs text-green-600 mt-1">
-                      Tiết kiệm {formatCurrency(reviewData.appliedPromotion.discountAmount)}
-                    </p>
+                    )}
+
+                    {reviewData?.appliedPromotions && reviewData.appliedPromotions.length > 0 && (
+                      <div>
+                        <div className="text-xs font-semibold text-green-800 uppercase tracking-wide">
+                          Chi tiết khuyến mãi
+                        </div>
+                        <ul className="mt-1 space-y-1 text-xs text-green-700">
+                          {reviewData.appliedPromotions.map((promo, index) => (
+                            <li key={`${promo}-${index}`} className="flex items-start gap-1">
+                              <span className="text-green-500">•</span>
+                              <span>{promo}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Sản phẩm tặng kèm (mua X tặng Y) */}
+                {reviewData?.giftItems && reviewData.giftItems.length > 0 && (
+                  <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3">
+                    <h3 className="text-sm font-medium text-green-800 mb-1">
+                      🎁 Sản phẩm tặng kèm
+                    </h3>
+                    <ul className="space-y-1 text-xs text-green-700">
+                      {reviewData.giftItems.map((gift, index) => (
+                        <li key={`${gift.productName}-${index}`}>
+                          • {gift.productName} ({gift.unitName}) x{gift.quantity} - Miễn phí
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
 
