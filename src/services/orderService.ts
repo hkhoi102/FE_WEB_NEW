@@ -114,6 +114,7 @@ export interface CartReviewResponse {
   subtotal: number
   discountAmount: number
   totalAmount: number
+  appliedPromotions?: string[]
   appliedPromotion?: {
     id: number
     name: string
@@ -207,6 +208,7 @@ export const OrderApi = {
           subtotal: subtotal,
           discountAmount: 0,
           totalAmount: subtotal,
+          appliedPromotions: [],
           orderDetails: request.orderDetails.map(item => {
             const cartItem = cartItems.find((ci: any) => ci.unitId === item.productUnitId || ci.id === item.productUnitId)
             return {
@@ -235,6 +237,7 @@ export const OrderApi = {
         subtotal: apiData.totalOriginalAmount || 0,
         discountAmount: apiData.totalDiscountAmount || 0,
         totalAmount: apiData.totalFinalAmount || 0,
+        appliedPromotions: Array.isArray(apiData.appliedPromotions) ? apiData.appliedPromotions : undefined,
         appliedPromotion: apiData.appliedPromotions && apiData.appliedPromotions.length > 0 ? {
           id: 1, // Mock ID since API doesn't return promotion ID
           name: apiData.appliedPromotions[0],

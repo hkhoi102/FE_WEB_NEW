@@ -557,14 +557,32 @@ const Checkout: React.FC = () => {
                   </div>
                 )}
 
-                {reviewData?.appliedPromotion && (
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <div className="text-sm font-medium text-green-900">
-                      {reviewData.appliedPromotion.name}
-                    </div>
-                    <div className="text-xs text-green-700">
-                      Tiết kiệm {formatCurrency(discountAmount)}
-                    </div>
+                {(reviewData?.appliedPromotion || (reviewData?.appliedPromotions && reviewData.appliedPromotions.length > 0)) && (
+                  <div className="bg-green-50 p-3 rounded-lg space-y-2">
+                    {reviewData?.appliedPromotion && (
+                      <div>
+                        <div className="text-sm font-medium text-green-900">
+                          {reviewData.appliedPromotion.name}
+                        </div>
+                        <div className="text-xs text-green-700">
+                          Tiết kiệm {formatCurrency(discountAmount)}
+                        </div>
+                      </div>
+                    )}
+
+                    {reviewData?.appliedPromotions && reviewData.appliedPromotions.length > 0 && (
+                      <div>
+                        <div className="text-xs font-semibold text-green-800 uppercase tracking-wide">Chi tiết khuyến mãi</div>
+                        <ul className="mt-1 space-y-1 text-xs text-green-700">
+                          {reviewData.appliedPromotions.map((promo, index) => (
+                            <li key={`${promo}-${index}`} className="flex items-start gap-1">
+                              <span className="text-green-500">•</span>
+                              <span>{promo}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 )}
 
