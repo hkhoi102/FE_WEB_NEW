@@ -4,6 +4,7 @@ import { CategoryCard, ProductCard, SectionHeader, PromoCard, TestimonialCard, P
 import { CategoryService, type Category } from '@/services/categoryService'
 import { ProductService, type Product } from '@/services/productService'
 import type { ReviewItem } from '@/services/reviewService'
+import { PromotionServiceApi, type PromotionHeaderDto, type PromotionLineDto, type PromotionDetailDto } from '@/services/promotionService'
 import bannerImg from '@/images/Bannar_Big-removebg-preview.png'
 import freshFruit from '@/images/fresh_fruit.png'
 import snacksImg from '@/images/snacks.png'
@@ -42,6 +43,20 @@ const Home = () => {
   const [error, setError] = useState<string | null>(null)
   const [reviews, setReviews] = useState<ReviewItem[]>([])
   const [reviewPage, setReviewPage] = useState<number>(0)
+  const [promotions, setPromotions] = useState<
+    (PromotionHeaderDto & {
+      lines?: PromotionLineDto[]
+      detailsByLine?: Record<
+        number,
+        (PromotionDetailDto & {
+          conditionProductName?: string
+          conditionUnitName?: string
+          giftProductName?: string
+          giftUnitName?: string
+        })[]
+      >
+    })[]
+  >([])
   const ITEMS_PER_REVIEW_PAGE = 3
 
   useEffect(() => {
@@ -50,15 +65,95 @@ const Home = () => {
         setLoading(true)
         setError(null)
 
-        // Load categories and products in parallel
-        const [categoriesData, productsResponse] = await Promise.all([
+        // Load categories, products và khuyến mãi song song
+        const [categoriesData, productsResponse, promotionHeadersRaw] = await Promise.all([
           CategoryService.getCategories(),
-          ProductService.getProducts(1, 10)
+          ProductService.getProducts(1, 10),
+          PromotionServiceApi.getHeaders(),
         ])
+
+        // Với mỗi header khuyến mãi, lấy thêm 1 dòng + chi tiết đầu tiên (nếu có) để mô tả rõ
+        const promotionHeaders: (PromotionHeaderDto & {
+          lines?: PromotionLineDto[]
+          detailsByLine?: Record<
+            number,
+            (PromotionDetailDto & {
+              conditionProductName?: string
+              conditionUnitName?: string
+              giftProductName?: string
+              giftUnitName?: string
+            })[]
+          >
+        })[] = await Promise.all(
+          promotionHeadersRaw.map(async (h) => {
+            try {
+              const lines = await PromotionServiceApi.getLinesAll(h.id)
+              const limitedLines = lines.slice(0, 1) // chỉ cần 1 dòng cho banner
+              const detailsByLine: Record<
+                number,
+                (PromotionDetailDto & {
+                  conditionProductName?: string
+                  conditionUnitName?: string
+                  giftProductName?: string
+                  giftUnitName?: string
+                })[]
+              > = {}
+              for (const ln of limitedLines) {
+                try {
+                  const ds = await PromotionServiceApi.getDetailsAll(ln.id)
+                  const rawDetails: PromotionDetailDto[] = Array.isArray(ds) ? ds : []
+
+                  // Bổ sung tên sản phẩm cho khuyến mãi BUY_X_GET_Y để hiển thị rõ "mua gì tặng gì"
+                  const enrichedDetails = await Promise.all(
+                    rawDetails.map(async (detail) => {
+                      const extended: PromotionDetailDto & {
+                        conditionProductName?: string
+                        conditionUnitName?: string
+                        giftProductName?: string
+                        giftUnitName?: string
+                      } = { ...detail }
+                      const typeUpper = String(ln.type || (ln as any).promotionType || '').toUpperCase()
+
+                      if (typeUpper === 'BUY_X_GET_Y') {
+                        if (detail.conditionProductUnitId) {
+                          try {
+                            const info = await ProductService.getProductUnitById(detail.conditionProductUnitId)
+                            extended.conditionProductName = info?.productName || ''
+                            extended.conditionUnitName = info?.unitName || ''
+                          } catch {
+                            // bỏ qua nếu lỗi
+                          }
+                        }
+                        if (detail.giftProductUnitId) {
+                          try {
+                            const info = await ProductService.getProductUnitById(detail.giftProductUnitId)
+                            extended.giftProductName = info?.productName || ''
+                            extended.giftUnitName = info?.unitName || ''
+                          } catch {
+                            // bỏ qua nếu lỗi
+                          }
+                        }
+                      }
+                      return extended
+                    })
+                  )
+
+                  detailsByLine[ln.id] = enrichedDetails
+                } catch {
+                  detailsByLine[ln.id] = []
+                }
+              }
+              return { ...h, lines: limitedLines, detailsByLine }
+            } catch {
+              return { ...h }
+            }
+          })
+        )
 
         setCategories(categoriesData)
         setProducts(productsResponse.products)
         setReviews(mockReviews)
+        setPromotions(promotionHeaders)
         setReviewPage(0)
       } catch (err) {
         console.error('Error fetching data:', err)
@@ -66,6 +161,7 @@ const Home = () => {
         setCategories([])
         setProducts([])
         setReviews(mockReviews)
+        setPromotions([])
       } finally {
         setLoading(false)
       }
@@ -83,6 +179,93 @@ const Home = () => {
     // Fallback về mapping local
     return categoryImageMap[category.name] || freshFruit
   }
+
+  // Lọc các khuyến mãi đang hiệu lực để hiển thị ở banner
+  const activePromotions = promotions.filter((p) => {
+    if (!p.active) return false
+    const now = new Date()
+    const start = p.startDate ? new Date(p.startDate) : undefined
+    const end = p.endDate ? new Date(p.endDate) : undefined
+    if (start && now < start) return false
+    if (end && now > end) return false
+    return true
+  })
+
+  const topPromotion = activePromotions[0]
+  const secondaryPromotions = activePromotions.slice(1, 3)
+
+  // Helper: format tiền VND
+  const formatCurrencyVND = (amount: number) =>
+    new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      maximumFractionDigits: 0,
+    }).format(amount)
+
+  // Helper: mô tả chi tiết khuyến mãi cho banner
+  const describePromotion = (
+    promo: PromotionHeaderDto & {
+      lines?: PromotionLineDto[]
+      detailsByLine?: Record<
+        number,
+        (PromotionDetailDto & {
+          conditionProductName?: string
+          conditionUnitName?: string
+          giftProductName?: string
+          giftUnitName?: string
+        })[]
+      >
+    }
+  ) => {
+    const line = promo.lines && promo.lines[0]
+    const details = line && promo.detailsByLine && promo.detailsByLine[line.id]
+    const d = details && details[0]
+    const type = (line?.type || (promo as any).type || '').toUpperCase()
+
+    if (type === 'BUY_X_GET_Y' && d) {
+      const condName = d.conditionProductName
+      const condUnit = d.conditionUnitName
+      const giftName = d.giftProductName
+      const giftUnit = d.giftUnitName
+
+      const condLabel = condName ? `${condUnit ? `${condUnit} ` : ''}${condName}` : undefined
+      const giftLabel = giftName ? `${giftUnit ? `${giftUnit} ` : ''}${giftName}` : undefined
+
+      // Ví dụ đầy đủ: "Mua 1 lon Coca tặng 1 lon 7 Up"
+      if (d.conditionQuantity && d.freeQuantity && condLabel && giftLabel) {
+        return `Mua ${d.conditionQuantity} ${condLabel} tặng ${d.freeQuantity} ${giftLabel}`
+      }
+      // Thiếu 1 trong 2 tên sản phẩm thì hiển thị đơn giản hơn
+      if (d.conditionQuantity && d.freeQuantity) {
+        return `Mua ${d.conditionQuantity} tặng ${d.freeQuantity}`
+      }
+      if (d.freeQuantity) return `Tặng ${d.freeQuantity} sản phẩm`
+      return 'Mua X tặng Y'
+    }
+
+    if (type === 'DISCOUNT_PERCENT' && d?.discountPercent) {
+      // Ví dụ: "Giảm 20% cho đơn từ 200.000đ"
+      const base = `Giảm ${d.discountPercent}%`
+      if (d.minAmount && d.minAmount > 0) {
+        return `${base} cho đơn từ ${formatCurrencyVND(d.minAmount)}`
+      }
+      return base
+    }
+
+    if (type === 'DISCOUNT_AMOUNT' && d?.discountAmount) {
+      // Ví dụ: "Giảm 50.000đ cho đơn từ 200.000đ"
+      const discountText = formatCurrencyVND(d.discountAmount)
+      const base = `Giảm ${discountText}`
+      if (d.minAmount && d.minAmount > 0) {
+        return `${base} cho đơn từ ${formatCurrencyVND(d.minAmount)}`
+      }
+      return base
+    }
+
+    // Fallback chung
+    return 'Khuyến mãi đang diễn ra'
+  }
+
   return (
     <PageTransition>
       <div className="space-y-16">
@@ -99,39 +282,80 @@ const Home = () => {
           </div>
           <div className="relative p-10 md:p-12 max-w-xl z-10 transition-all duration-300 group-hover:translate-x-2">
             <p className="uppercase tracking-wide text-primary-100 text-sm mb-2">Chào mừng đến với Siêu Thị Thông Minh</p>
-            <h1 className="text-3xl md:text-5xl font-bold leading-tight">Thực phẩm hữu cơ tươi và tốt cho sức khỏe</h1>
-            <p className="mt-4 text-primary-100 max-w-md">Giảm đến 30% OFF. Miễn phí vận chuyển cho đơn hàng đầu tiên.</p>
+            <h1 className="text-3xl md:text-5xl font-bold leading-tight">
+              {topPromotion ? topPromotion.name : 'Thực phẩm hữu cơ tươi và tốt cho sức khỏe'}
+            </h1>
+            <p className="mt-4 text-primary-100 max-w-md">
+              {topPromotion
+                ? describePromotion(topPromotion as any)
+                : 'Giảm đến 30% OFF. Miễn phí vận chuyển cho đơn hàng đầu tiên.'}
+            </p>
             <Link to="/products" className="inline-block mt-6 bg-white text-primary-700 font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 transition-all duration-300 group-hover:scale-105">Mua ngay</Link>
           </div>
         </div>
 
         <div className="grid gap-6">
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative group cursor-pointer transition-all duration-500 hover:shadow-xl hover:scale-105">
-            <div className="overflow-hidden h-48">
-              <img
-                src={specialProductImg}
-                alt="Sản phẩm đặc biệt"
-                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-              />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 transition-all duration-300 group-hover:from-black/70">
-              <h3 className="font-semibold text-white text-lg transition-transform duration-300 group-hover:translate-y-[-4px]">Sản phẩm đặc biệt</h3>
-              <p className="text-sm text-white/90 transition-transform duration-300 group-hover:translate-y-[-4px]">Ưu đãi trong tháng</p>
-            </div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative group cursor-pointer transition-all duration-500 hover:shadow-xl hover:scale-105">
-            <div className="overflow-hidden h-48">
-              <img
-                src={summerSaleImg}
-                alt="Khuyến mãi hè"
-                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-              />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 transition-all duration-300 group-hover:from-black/70">
-              <h3 className="font-semibold text-white text-lg transition-transform duration-300 group-hover:translate-y-[-4px]">Khuyến mãi hè</h3>
-              <p className="text-sm text-white/90 transition-transform duration-300 group-hover:translate-y-[-4px]">Giảm đến 75%</p>
-            </div>
-          </div>
+          {secondaryPromotions.length > 0 ? (
+            secondaryPromotions.map((promo) => (
+              <div
+                key={promo.id}
+                className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative group cursor-pointer transition-all duration-500 hover:shadow-xl hover:scale-105"
+              >
+                <div className="overflow-hidden h-48">
+                  <img
+                    src={promo.id % 2 === 0 ? specialProductImg : summerSaleImg}
+                    alt={promo.name}
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 transition-all duration-300 group-hover:from-black/70">
+                  <h3 className="font-semibold text-white text-lg transition-transform duration-300 group-hover:translate-y-[-4px]">
+                    {promo.name}
+                  </h3>
+                  <p className="text-sm text-white/90 transition-transform duration-300 group-hover:translate-y-[-4px]">
+                    {describePromotion(promo as any)}
+                  </p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <>
+              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative group cursor-pointer transition-all duration-500 hover:shadow-xl hover:scale-105">
+                <div className="overflow-hidden h-48">
+                  <img
+                    src={specialProductImg}
+                    alt="Sản phẩm đặc biệt"
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 transition-all duration-300 group-hover:from-black/70">
+                  <h3 className="font-semibold text-white text-lg transition-transform duration-300 group-hover:translate-y-[-4px]">
+                    Sản phẩm đặc biệt
+                  </h3>
+                  <p className="text-sm text-white/90 transition-transform duration-300 group-hover:translate-y-[-4px]">
+                    Ưu đãi trong tháng
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden relative group cursor-pointer transition-all duration-500 hover:shadow-xl hover:scale-105">
+                <div className="overflow-hidden h-48">
+                  <img
+                    src={summerSaleImg}
+                    alt="Khuyến mãi hè"
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6 transition-all duration-300 group-hover:from-black/70">
+                  <h3 className="font-semibold text-white text-lg transition-transform duration-300 group-hover:translate-y-[-4px]">
+                    Khuyến mãi hè
+                  </h3>
+                  <p className="text-sm text-white/90 transition-transform duration-300 group-hover:translate-y-[-4px]">
+                    Giảm đến 75%
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
@@ -248,9 +472,23 @@ const Home = () => {
       {/* Promo Banners */}
       <section>
         <div className="grid md:grid-cols-3 gap-6">
-          <PromoCard label="Deal hot" title="Giảm giá trong tháng" subline="" bgClassName="bg-green-700" />
-          <PromoCard label="85% Fat Free" title="Thịt ít béo" subline="Chỉ từ $79.99" bgClassName="bg-black" />
-          <PromoCard label="Summer Sale" title="Trái cây 100% tươi" subline="Lên đến" badgeText="64% OFF" bgClassName="bg-yellow-400" />
+          {activePromotions.length > 0 ? (
+            activePromotions.slice(0, 3).map((promo, index) => (
+              <PromoCard
+                key={promo.id}
+                label={index === 0 ? 'Deal hot' : index === 1 ? 'Ưu đãi đặc biệt' : 'Khuyến mãi'}
+                title={promo.name}
+                subline={describePromotion(promo as any)}
+                bgClassName={index === 0 ? 'bg-green-700' : index === 1 ? 'bg-black' : 'bg-yellow-400'}
+              />
+            ))
+          ) : (
+            <>
+              <PromoCard label="Deal hot" title="Giảm giá trong tháng" subline="" bgClassName="bg-green-700" />
+              <PromoCard label="85% Fat Free" title="Thịt ít béo" subline="Chỉ từ $79.99" bgClassName="bg-black" />
+              <PromoCard label="Summer Sale" title="Trái cây 100% tươi" subline="Lên đến" badgeText="64% OFF" bgClassName="bg-yellow-400" />
+            </>
+          )}
         </div>
       </section>
 
