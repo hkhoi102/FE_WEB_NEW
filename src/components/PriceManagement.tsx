@@ -337,6 +337,43 @@ const PriceManagement = () => {
     return ''
   }
 
+  // Hiển thị trạng thái dựa trên cả cờ active và thời gian hiệu lực
+  const getHeaderStatus = (h: PriceHeader) => {
+    const now = new Date()
+    const start = h.timeStart ? new Date(h.timeStart) : undefined
+    const end = h.timeEnd ? new Date(h.timeEnd) : undefined
+
+    // Nếu không active thì luôn coi là ngưng
+    if (!h.active) {
+      return {
+        label: 'Ngưng',
+        className: 'bg-gray-100 text-gray-700 border-gray-200',
+      }
+    }
+
+    // Nếu đã có ngày bắt đầu và bây giờ vẫn trước thời điểm đó
+    if (start && !isNaN(start.getTime()) && now < start) {
+      return {
+        label: 'Chưa hiệu lực',
+        className: 'bg-blue-100 text-blue-800 border-blue-200',
+      }
+    }
+
+    // Nếu có ngày kết thúc và đã quá thời gian
+    if (end && !isNaN(end.getTime()) && now > end) {
+      return {
+        label: 'Hết hiệu lực',
+        className: 'bg-red-100 text-red-800 border-red-200',
+      }
+    }
+
+    // Ngược lại là đang hiệu lực
+    return {
+      label: 'Đang hiệu lực',
+      className: 'bg-green-100 text-green-800 border-green-200',
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -383,7 +420,14 @@ const PriceManagement = () => {
                   <td className="px-5 py-2 whitespace-nowrap text-sm text-gray-500">{formatDateSafe(h.timeStart)}</td>
                   <td className="px-5 py-2 whitespace-nowrap text-sm text-gray-500">{formatDateSafe(h.timeEnd)}</td>
                   <td className="px-5 py-2 whitespace-nowrap text-sm">
-                    <span className={`px-2 py-0.5 rounded-full text-xs border ${h.active ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>{h.active ? 'Đang hiệu lực' : 'Ngưng' }</span>
+                    {(() => {
+                      const status = getHeaderStatus(h)
+                      return (
+                        <span className={`px-2 py-0.5 rounded-full text-xs border ${status.className}`}>
+                          {status.label}
+                        </span>
+                      )
+                    })()}
                   </td>
                   <td className="px-5 py-2 whitespace-nowrap text-sm">
                     <div className="flex items-center justify-center gap-2">
