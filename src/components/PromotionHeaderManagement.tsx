@@ -1248,7 +1248,7 @@ const LineDetailEditor: React.FC<{ line: any; details: any[]; onChange: (arr: an
   }, [products, details])
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 style: !mt-0">
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4 !mt-0">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl p-8 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-semibold text-gray-900">Sửa chi tiết khuyến mãi</h3>

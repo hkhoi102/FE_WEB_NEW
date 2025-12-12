@@ -1246,7 +1246,7 @@ const ProductFormWithUnitsAndPrices = ({
 
       {/* Create Header Modal - chỉ hiển thị khi sửa sản phẩm */}
       {product && showCreateHeaderModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4 !mt-0">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Tạo bảng giá mới</h3>
 
@@ -1318,7 +1318,7 @@ const ProductFormWithUnitsAndPrices = ({
 
       {/* Price Modal - chỉ hiển thị khi sửa sản phẩm */}
       {product && showPriceModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4 !mt-0">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <h3 className="text-lg font-medium text-gray-900 mb-4">
               Thêm giá cho đơn vị: {productUnits.find(u => u.id === selectedUnitForPriceModal)?.unitName}

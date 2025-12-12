@@ -1973,7 +1973,7 @@ const CreateOrderManagement: React.FC = () => {
 
       {/* Payment Method Selection Modal */}
       {showPaymentMethodModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 style: !mt-0" >
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4 !mt-0">
           <div className="bg-white rounded-lg p-8 max-w-lg w-full mx-4">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-900">Chọn phương thức thanh toán</h3>
@@ -2061,7 +2061,7 @@ const CreateOrderManagement: React.FC = () => {
 
       {/* Payment QR Modal */}
       {showPaymentModal && paymentInfo && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4 !mt-0">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -2186,7 +2186,7 @@ const CreateOrderManagement: React.FC = () => {
 
       {/* Payment Success Modal */}
       {showPaymentSuccessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 style: !mt-0">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4 !mt-0">
           <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center">
             <div className="mb-6">
               <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
@@ -2240,7 +2240,7 @@ const CreateOrderManagement: React.FC = () => {
 
       {/* Print Invoice Modal */}
       {showPrintModal && invoiceData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4 !mt-0">
           <div className="bg-white rounded-lg p-4 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-3 print:hidden">
               <h3 className="text-lg font-semibold text-gray-900">Xem trước hóa đơn</h3>
